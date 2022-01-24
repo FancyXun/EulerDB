@@ -1,4 +1,4 @@
-from schema import encrypt
+from crypto import encrypt
 
 
 class Delta(object):
