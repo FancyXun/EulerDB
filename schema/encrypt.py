@@ -114,7 +114,6 @@ class FernetCipher:
         return self.cipher.decrypt(enc.encode('utf-8')).decode("utf-8")
 
 
-fernetCipher = FernetCipher()
 
 
 

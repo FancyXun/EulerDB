@@ -1,7 +1,7 @@
-import ply.yacc as yacc
+import ply.ply.yacc as yacc
 import sys
 
-from sql_lex import tokens
+from .sql_lex import tokens
 
 
 def p_statement(p):

@@ -4,8 +4,8 @@ import random
 import mysql.connector
 from mysql.connector import Error
 
-from handers.insert_hander import InsertHandler
-from handers.create_hander import CreateTableHandler
+from handers.insert_handler import InsertHandler
+from handers.create_handler import CreateTableHandler
 from handers.select_handler import SelectHandler
 
 
@@ -108,7 +108,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_insert(self):
         # insert data
-        for i in range(10000):
+        for i in range(100):
             sql = 'insert into user(id, name, age, sex, score, nick_name, comment) values (' + str(
                 random.randint(100000, 1000000)) + ',"' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 5)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(

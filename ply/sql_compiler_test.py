@@ -1,10 +1,10 @@
 import unittest
-from sql_yacc import sql_parse
+from ply.sql_compiler.sql_yacc import sql_parse
 
 
 class MyTestCase(unittest.TestCase):
     def test_ply_select(self):
-        query = 'select * from test;'
+        query = 'SELECT * FROM STUDENT;'
         ast = sql_parse(query)
         print(ast)
         self.assertEqual(True, True)  # add assertion here

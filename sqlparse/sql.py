@@ -11,7 +11,8 @@ import re
 
 from sqlparse import tokens as T
 from sqlparse.utils import imt, remove_quotes
-from schema.encrypt import fernetCipher
+from schema.metadata import Delta
+
 
 class NameAliasMixin:
     """Implements get_real_name and get_alias."""
@@ -345,9 +346,9 @@ class TokenList(Token):
                     if token.ttype in (T.Punctuation, T.Whitespace):
                         continue
                     if hasattr(token, 'tokens'):
-                        token.tokens[0].value = "'" + fernetCipher.encrypt(token.tokens[0].value) + "'"
+                        token.tokens[0].value = "'" + Delta().keys["varchar"].encrypt(token.tokens[0].value) + "'"
                     else:
-                        tokens[idx1].value = "'" + fernetCipher.encrypt(token.value) + "'"
+                        tokens[idx1].value = "'" + Delta().keys["varchar"].encrypt(token.value) + "'"
                 subtokens[idx] = subtoken
                 break
 

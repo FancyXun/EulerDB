@@ -8,7 +8,6 @@ import mysql.connector
 from backend import execution_context
 
 
-
 class DBConnection:
     def __init__(self, user, password, db, host='127.0.0.1'):
         self.host = host

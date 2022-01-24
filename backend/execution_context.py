@@ -1,7 +1,7 @@
 from backend.executors import RemoteExecutor
 from backend.executors import DecryptQueryExecutor
-from ply.ply import lex
-from ply.ply import yacc
+from ply.sql_metadata.parser import Parser
+from handers.decrypt_handler import DecryptHandler
 
 
 def invoke(conn, query):
@@ -9,8 +9,7 @@ def invoke(conn, query):
 
     """
     # todo: get sql command from query
-    parser = yacc.yacc()
-    parser.parse(query)
-    result = RemoteExecutor(conn).call(query)
-    return DecryptQueryExecutor().decrypt(result)
+    executor = RemoteExecutor(conn)
+    executor.call(query, Parser(query))
+    return DecryptQueryExecutor(DecryptHandler).decrypt(executor.result)
 

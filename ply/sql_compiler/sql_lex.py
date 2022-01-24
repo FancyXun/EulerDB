@@ -1,4 +1,4 @@
-import ply.lex as lex
+import ply.ply.lex as lex
 
 tokens = [
     'create',
