@@ -21,6 +21,7 @@ import random
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.fernet import Fernet
 from gmssl.sm4 import CryptSM4, SM4_ENCRYPT, SM4_DECRYPT
+from crypto.ope.ope import OPE
 
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
@@ -112,6 +113,17 @@ class FernetCipher:
 
     def decrypt(self, enc):
         return self.cipher.decrypt(enc.encode('utf-8')).decode("utf-8")
+
+
+class OPECipher:
+    def __init__(self):
+        self.cipher = OPE(b'ZvtU2iyA0E5byRp6YMxbsoEnk1vKPxtm6IcLt4ZxuK0=')
+
+    def encrypt(self, raw):
+        return self.cipher.encrypt(raw)
+
+    def decrypt(self, enc):
+        return self.cipher.decrypt(enc)
 
 
 

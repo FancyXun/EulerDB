@@ -7,8 +7,8 @@ class Delta(object):
 
     def __init__(self):
         self.meta = {}
-        self.keys = {"varchar": encrypt.FernetCipher(),
-                     "int": encrypt.FernetCipher()}
+        self.ciphers = {"varchar": encrypt.FernetCipher(),
+                        "int": encrypt.OPECipher()}
 
     def __new__(cls, *args, **kwargs):
         if Delta.__instance is None:

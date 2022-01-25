@@ -381,7 +381,7 @@ def group_values(tlist):
             end_idx = tidx
         tidx, token = tlist.token_next(tidx)
     if end_idx != -1:
-        tlist.encrypt_token(sql.Parenthesis, start_idx, end_idx)
+        tlist.encrypt_tokens(sql.Parenthesis, start_idx, end_idx)
         tlist.group_tokens(sql.Values, start_idx, end_idx, extend=True)
 
 

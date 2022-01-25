@@ -335,7 +335,7 @@ class TokenList(Token):
 
         return grp
 
-    def encrypt_token(self, grp, start, end, include_end=True):
+    def encrypt_tokens(self, grp, start, end, include_end=True):
         start_idx = start
         end_idx = end + include_end
         subtokens = self.tokens[start_idx+1:end_idx]
@@ -345,12 +345,20 @@ class TokenList(Token):
                 for idx1, token in enumerate(tokens):
                     if token.ttype in (T.Punctuation, T.Whitespace):
                         continue
+                    # todo: maybe need recursion
                     if hasattr(token, 'tokens'):
-                        token.tokens[0].value = "'" + Delta().keys["varchar"].encrypt(token.tokens[0].value) + "'"
+                        token.tokens[0].value = self.__encrypt_token__(token.tokens[0])
                     else:
-                        tokens[idx1].value = "'" + Delta().keys["varchar"].encrypt(token.value) + "'"
+                        tokens[idx1].value = self.__encrypt_token__(token)
                 subtokens[idx] = subtoken
                 break
+
+    @staticmethod
+    def __encrypt_token__(token):
+        if str(token.ttype) == "Token.Literal.Number.Integer":
+            return str(Delta().ciphers["int"].encrypt(int(token.value)))
+        else:
+            return "'" + Delta().ciphers["varchar"].encrypt(token.value) + "'"
 
     def insert_before(self, where, token):
         """Inserts *token* before *where*."""

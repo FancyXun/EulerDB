@@ -40,7 +40,7 @@ class ContextTestCase(unittest.TestCase):
     def test_insert(self):
         for i in range(10000):
             query = 'insert into user(id, name, age, sex, score, nick_name, comment) values (' + str(
-                random.randint(100000, 1000000)) + ',"' + ''.join(
+                random.randint(1000, 10000)) + ',"' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 5)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '","' + ''.join(

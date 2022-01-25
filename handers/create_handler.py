@@ -15,10 +15,13 @@ class CreateTableHandler:
         pass
 
     def __rewrite__(self):
+        """
 
         self.query = re.sub(r'varchar\([0-9]+\)', 'varchar(300)',
                             re.sub(r' int ', ' varchar(300) ',
                                    re.sub(r' int,', ' varchar(300),', self.original_query)))
+        """
+        self.query = re.sub(r'varchar\([0-9]+\)', 'varchar(300)', self.original_query)
 
     def update_delta(self):
         assert (len(self.parser.tables) == 1)

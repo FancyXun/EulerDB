@@ -14,10 +14,10 @@ import crypto.ope.util as util
 from crypto.ope.errors import InvalidCiphertextError, InvalidRangeLimitsError, OutOfRangeError
 
 
-DEFAULT_IN_RANGE_START = 0
-DEFAULT_IN_RANGE_END = 2**123 - 1
-DEFAULT_OUT_RANGE_START = 0
-DEFAULT_OUT_RANGE_END = 2**258 - 1
+DEFAULT_IN_RANGE_START = -2**15
+DEFAULT_IN_RANGE_END = 2**15 - 1
+DEFAULT_OUT_RANGE_START = -2**31
+DEFAULT_OUT_RANGE_END = 2**31 - 1
 
 
 class ValueRange(object):
