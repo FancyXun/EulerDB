@@ -11,7 +11,7 @@ import re
 
 from sqlparse import tokens as T
 from sqlparse.utils import imt, remove_quotes
-from schema.metadata import Delta
+from schema.metadata import CIPHERS
 
 
 class NameAliasMixin:
@@ -356,9 +356,9 @@ class TokenList(Token):
     @staticmethod
     def __encrypt_token__(token):
         if str(token.ttype) == "Token.Literal.Number.Integer":
-            return str(Delta().ciphers["int"].encrypt(int(token.value)))
+            return str(CIPHERS["INT"].encrypt(int(token.value)))
         else:
-            return "'" + Delta().ciphers["varchar"].encrypt(token.value) + "'"
+            return "'" + CIPHERS["VARCHAR"].encrypt(token.value) + "'"
 
     def insert_before(self, where, token):
         """Inserts *token* before *where*."""

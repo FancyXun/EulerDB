@@ -1,11 +1,10 @@
-from schema.metadata import Delta
+from schema.metadata import CIPHERS
 
 
 class DecryptHandler:
     def __init__(self, enc_result):
         self.enc_result = enc_result
         self.result = []
-        self.ciphers = Delta().ciphers
 
     def __repr__(self):
         pass
@@ -18,9 +17,7 @@ class DecryptHandler:
             self.result.append(tuple(new_row))
         return self.result
 
-    def __decrypt__(self, enc):
-        if isinstance(enc, int):
-            return self.ciphers["int"].decrypt(enc)
-
-        return self.ciphers["varchar"].decrypt(enc)
+    @staticmethod
+    def __decrypt__(enc):
+        return CIPHERS["VARCHAR"].decrypt(enc)
 

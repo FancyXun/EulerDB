@@ -4,6 +4,7 @@ from handers.create_handler import CreateTableHandler
 from handers.select_handler import SelectHandler
 from backend.executors.abstract_executor import AbstractQueryExecutor
 from ply.sql_metadata.keywords_lists import QueryType
+from schema.metadata import Delta
 
 
 class RemoteExecutor(AbstractQueryExecutor):
@@ -30,6 +31,11 @@ class RemoteExecutor(AbstractQueryExecutor):
             # first update table meta
             self.handler = CreateTableHandler(query, parser, self.conn.database)
             if self.conn.is_connected():
-                cursor = self.conn.cursor()
-                cursor.execute(self.handler.query)
+                try:
+                    cursor = self.conn.cursor()
+                    cursor.execute(self.handler.query)
+                    Delta().save_delta()
+                except Error as e:
+                    print("Error while connecting to MySQL", e)
+                    # delete metadata
 

@@ -124,8 +124,3 @@ class OPECipher:
 
     def decrypt(self, enc):
         return self.cipher.decrypt(enc)
-
-
-
-
-
