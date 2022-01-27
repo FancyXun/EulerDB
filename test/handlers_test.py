@@ -4,9 +4,9 @@ import random
 import mysql.connector
 from mysql.connector import Error
 
-from handers.insert_handler import InsertHandler
-from handers.create_handler import CreateTableHandler
-from handers.select_handler import SelectHandler
+from src.handers.insert_handler import InsertHandler
+from src.handers.create_handler import CreateTableHandler
+from src.handers.select_handler import SelectHandler
 
 
 def create_db(database):

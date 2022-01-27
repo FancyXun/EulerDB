@@ -3,3 +3,4 @@ gmssl == 3.2.1
 cryptography == 36.0.1
 Crypto == 1.4.1
 tornado
+sqlparse
