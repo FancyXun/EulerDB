@@ -1,0 +1,69 @@
+{
+  "plain": {
+    "points": {
+      "user": {
+        "id": "int",
+        "name": "varchar",
+        "age": "int",
+        "sex": "varchar",
+        "score": "int",
+        "nick_name": "varchar"
+      }
+    }
+  },
+  "cipher": {
+    "points": {
+      "TABEL_fc1b6112bc9a4bd246ef8ac8e58282ff": {
+        "id": {
+          "OPE": "IDOPE",
+          "SYMMETRIC": "IDSYMMETRIC"
+        },
+        "name": {
+          "SYMMETRIC": "NAMESYMMETRIC"
+        },
+        "age": {
+          "OPE": "AGEOPE",
+          "SYMMETRIC": "AGESYMMETRIC"
+        },
+        "sex": {
+          "SYMMETRIC": "SEXSYMMETRIC"
+        },
+        "score": {
+          "OPE": "SCOREOPE",
+          "SYMMETRIC": "SCORESYMMETRIC"
+        },
+        "nick_name": {
+          "SYMMETRIC": "NICK_NAMESYMMETRIC"
+        }
+      },
+      "TABEL_87744a40de00731efdf3db2de43dd337": {
+        "id": {
+          "OPE": "IDOPE",
+          "SYMMETRIC": "IDSYMMETRIC"
+        },
+        "name": {
+          "SYMMETRIC": "NAMESYMMETRIC"
+        },
+        "age": {
+          "OPE": "AGEOPE",
+          "SYMMETRIC": "AGESYMMETRIC"
+        },
+        "sex": {
+          "SYMMETRIC": "SEXSYMMETRIC"
+        },
+        "score": {
+          "OPE": "SCOREOPE",
+          "SYMMETRIC": "SCORESYMMETRIC"
+        },
+        "nick_name": {
+          "SYMMETRIC": "NICK_NAMESYMMETRIC"
+        }
+      }
+    }
+  },
+  "table_kv": {
+    "points": {
+      "user": "TABEL_87744a40de00731efdf3db2de43dd337"
+    }
+  }
+}

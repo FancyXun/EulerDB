@@ -356,7 +356,7 @@ class TokenList(Token):
     @staticmethod
     def __encrypt_token__(token):
         if str(token.ttype) == "Token.Literal.Number.Integer":
-            return str(CIPHERS["INT"].encrypt(int(token.value)))
+            return str(CIPHERS["INT"][0].encrypt(int(token.value)))
         else:
             return "'" + CIPHERS["VARCHAR"].encrypt(token.value) + "'"
 

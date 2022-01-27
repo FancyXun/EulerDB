@@ -2,7 +2,7 @@
 Module used to produce generalized compile out of given query
 """
 import re
-import sqlparse
+import src.compile.parse as sqlparse
 
 
 class Generalizator:

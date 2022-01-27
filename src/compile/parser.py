@@ -6,12 +6,12 @@ import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-import sqlparse
-from sqlparse.sql import Token
-from sqlparse.tokens import Name, Number, Whitespace
+from . import parse as sqlparse
+from .parse.sql import Token
+from .parse.tokens import Name, Number, Whitespace
 
-from src.lex_module.sql_metadata.generalizator import Generalizator
-from src.lex_module.sql_metadata.keywords_lists import (
+from .generalizator import Generalizator
+from .keywords_lists import (
     COLUMNS_SECTIONS,
     KEYWORDS_BEFORE_COLUMNS,
     TokenType,
@@ -21,8 +21,8 @@ from src.lex_module.sql_metadata.keywords_lists import (
     TABLE_ADJUSTMENT_KEYWORDS,
     WITH_ENDING_KEYWORDS,
 )
-from src.lex_module.sql_metadata.token import EmptyToken, SQLToken
-from src.lex_module.sql_metadata.utils import UniqueList, flatten_list
+from .token import EmptyToken, SQLToken
+from .utils import UniqueList, flatten_list
 
 
 class Parser:  # pylint: disable=R0902

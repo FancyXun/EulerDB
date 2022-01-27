@@ -1,5 +1,5 @@
 import unittest
-from src.lex_module.sql_metadata.parser import Parser
+from src.compile.parser import Parser
 
 
 class MyTestCase(unittest.TestCase):

@@ -4,21 +4,21 @@ for legacy API dating back to 1.x version.
 
 Change your old imports:
 
-from sql_metadata import get_query_columns, get_query_tables
+from parser import get_query_columns, get_query_tables
 
 into:
 
-from sql_metadata.compat import get_query_columns, get_query_tables
+from parser.compat import get_query_columns, get_query_tables
 
 """
 # pylint:disable=missing-function-docstring
 from typing import List, Optional, Tuple
 
-import sqlparse
-from sqlparse.sql import TokenList
-from sqlparse.tokens import Whitespace
+import parse as sqlparse
+from parse.sql import TokenList
+from parse.tokens import Whitespace
 
-from src.lex_module.sql_metadata.parser import Parser
+from src.compile.parser import Parser
 
 
 def preprocess_query(query: str) -> str:

@@ -2,11 +2,10 @@
 Module contains internal SQLToken that creates linked list
 """
 from typing import Dict, List, Union
+from . import parse
+from .parse.tokens import Comment, Name, Number, Punctuation, Wildcard, Keyword
 
-import sqlparse.sql
-from sqlparse.tokens import Comment, Name, Number, Punctuation, Wildcard, Keyword
-
-from src.lex_module.sql_metadata.keywords_lists import (
+from .keywords_lists import (
     KEYWORDS_BEFORE_COLUMNS,
     RELEVANT_KEYWORDS,
     QueryType,
@@ -21,7 +20,7 @@ class SQLToken:  # pylint: disable=R0902, R0904
 
     def __init__(
         self,
-        tok: sqlparse.sql.Token = None,
+        tok: parse.sql.Token = None,
         index: int = -1,
         subquery_level: int = 0,
         last_keyword: str = None,

@@ -3,7 +3,7 @@ from src.handers.insert_handler import InsertHandler
 from src.handers.create_handler import CreateTableHandler
 from src.handers.select_handler import SelectHandler
 from src.backend.executors.abstract_executor import AbstractQueryExecutor
-from src.lex_module.sql_metadata.keywords_lists import QueryType
+from src.compile.keywords_lists import QueryType
 from src.schema.metadata import Delta
 
 

@@ -1,5 +1,5 @@
 import unittest
-from src.crypto import OPECipher
+from src.crypto.encrypt import OPECipher
 
 
 class OPETest(unittest.TestCase):

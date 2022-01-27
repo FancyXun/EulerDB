@@ -21,6 +21,11 @@ CIPHERS = {
     "INT": [encrypt.OPECipher(), encrypt.FernetCipher()]
 }
 
+CIPHERS_META ={
+    "OPE": encrypt.OPECipher(),
+    "SYMMETRIC": encrypt.FernetCipher()
+}
+
 
 class Delta(object):
     __instance = None

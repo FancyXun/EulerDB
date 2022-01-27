@@ -1,6 +1,6 @@
 from src.backend.executors import RemoteExecutor
 from src.backend.executors import DecryptQueryExecutor
-from src.lex_module.sql_metadata.parser import Parser
+from src.compile.parser import Parser
 from src.handers.decrypt_handler import DecryptHandler
 
 
