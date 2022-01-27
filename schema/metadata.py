@@ -24,9 +24,7 @@ CIPHERS = {
 
 class Delta(object):
     __instance = None
-
-    def __init__(self):
-        pass
+    meta = None
 
     def __new__(cls, *args, **kwargs):
         if Delta.__instance is None:
@@ -35,18 +33,22 @@ class Delta(object):
         return Delta.__instance
 
     def update_delta(self, db_name, table_name, anonymous_meta, table_meta):
-
         if self.meta:
-            pass
-        else:
-            self.meta = {
-                "plain": {
-                    db_name: {table_name["origin"]: table_meta}
-                },
-                "cipher": {
-                    db_name: {table_name["anonymous"]: anonymous_meta}}
-            }
+            if db_name not in self.meta["plain"].keys():
+                # update database
+                self.meta["plain"].update({db_name: {table_name["origin"]: table_meta}})
+                self.meta["cipher"].update({db_name: {table_name["anonymous"]: anonymous_meta}})
+                self.meta["table_kv"].update({db_name: {table_name["origin"]: table_name["anonymous"]}})
+            else:
+                self.meta["plain"][db_name].update({table_name["origin"]: table_meta})
+                self.meta["cipher"][db_name].update({table_name["anonymous"]: anonymous_meta})
+                self.meta["table_kv"][db_name].update({table_name["origin"]: table_name["anonymous"]})
 
+        else:
+            self.meta = {"plain": {db_name: {table_name["origin"]: table_meta}},
+                         "cipher": {db_name: {table_name["anonymous"]: anonymous_meta}},
+                         "table_kv": {db_name: {table_name["origin"]: table_name["anonymous"]}}
+                         }
         return self.meta
 
     def delete_delta(self):
