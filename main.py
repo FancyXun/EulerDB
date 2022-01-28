@@ -5,7 +5,7 @@ from tornado.ioloop import IOLoop
 from tornado.web import Application, RequestHandler
 import mysql.connector
 
-from src.backend import execution_context
+from scheduler.backend import execution_context
 
 
 class DBConnection:

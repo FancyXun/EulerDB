@@ -3,7 +3,7 @@ import random
 
 import mysql.connector
 
-from src.backend import execution_context
+from scheduler.backend import execution_context
 
 
 class DBConnection:
@@ -38,7 +38,7 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_insert(self):
-        for i in range(10000):
+        for i in range(1000000):
             query = 'insert into user(id, name, age, sex, score, nick_name, comment) values (' + str(
                 random.randint(1000, 10000)) + ',"' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 5)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
