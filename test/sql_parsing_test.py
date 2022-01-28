@@ -12,28 +12,34 @@ class TestMySql(TestCase):
         result = parse(sql)
         expected = {"select": {"value": {"literal": "fred"}}}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_two_tables(self):
         result = parse("SELECT * from XYZZY, ABC")
         expected = {"from": ["XYZZY", "ABC"], "select": "*"}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_dot_table_name(self):
         result = parse("select * from SYS.XYZZY")
         expected = {"from": "SYS.XYZZY", "select": "*"}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_one_column(self):
         result = parse("Select A from dual")
         expected = {"select": {"value": "A"}, "from": "dual"}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_quote(self):
         result = parse("Select '''' from dual")
         expected = {"select": {"value": {"literal": "'"}}, "from": "dual"}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_quoted_name(self):
+        # fixme
         result = parse('Select a "@*#&", b as test."g.g".c from dual')
         expected = {
             "select": [
@@ -43,24 +49,19 @@ class TestMySql(TestCase):
             "from": "dual",
         }
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_expression(self):
         #                         1         2         3         4         5         6
         #               0123456789012345678901234567890123456789012345678901234567890123456789
         result = parse("SELECT a + b/2 + 45*c + (2/d) from dual")
-        expected = {
-            "from": "dual",
-            "select": {"value": {
-                "args": [
-                    "a",
-                    {"args": ["b", 2], "op": "div"},
-                    {"args": [45, "c"], "op": "mul"},
-                    {"args": [2, "d"], "op": "div"},
-                ],
-                "op": "add",
-            }},
-        }
+        expected = {'select':
+                        {'value':
+                             {'add': ['a', {'div': ['b', 2]},
+                             {'mul': [45, 'c']},
+                             {'div': [2, 'd']}]}}, 'from': 'dual'}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_underscore_name(self):
         #                         1         2         3         4         5         6
@@ -68,6 +69,7 @@ class TestMySql(TestCase):
         result = parse("select _id from dual")
         expected = {"select": {"value": "_id"}, "from": "dual"}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_dots_names(self):
         #                         1         2         3         4         5         6
@@ -75,6 +77,7 @@ class TestMySql(TestCase):
         result = parse("select a.b.c._d from dual")
         expected = {"select": {"value": "a.b.c._d"}, "from": "dual"}
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_select_many_column(self):
         result = parse("Select a, b, c from dual")
@@ -83,6 +86,7 @@ class TestMySql(TestCase):
             "from": "dual",
         }
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_bad_select1(self):
         with self.assertRaises(Exception):
@@ -119,16 +123,18 @@ class TestMySql(TestCase):
                     'where': {'like': ['a', {'literal': '%test%'}]}}
         print(format(result))
         self.assertEqual(result, expected)
+        print(format(result))
 
     def test_order_by(self):
         result = parse("INSERT INTO runoob_tbl (runoob_title, "
                        "runoob_author, submission_date) VALUES ('MySQL', 'zzz', NOW());")
         expected = {'columns': ['runoob_title', 'runoob_author', 'submission_date'],
                     'query': {
-                      'select': [{'value': {'literal': 'MySQL'}}, {'value': {'literal': 'zzz'}}, {'value': {'now': {}}}]},
+                        'select': [{'value': {'literal': 'MySQL'}}, {'value': {'literal': 'zzz'}},
+                                   {'value': {'now': {}}}]},
                     'insert': 'runoob_tbl'}
-        print(format(result))
         self.assertEqual(result, expected)
+        # print(format(result))
 
     def test_issue_64_table(self):
         sql = """INSERT INTO tab (name, a, b) VALUES (42, '6736w', 89) """
@@ -183,6 +189,7 @@ class TestMySql(TestCase):
         result = parse("select max(a) from b")
         expected = {'select': {'value': {'max': 'a'}},
                     'from': 'b'}
+        print(format(result))
         self.assertEqual(result, expected)
 
     def test_limit(self):
