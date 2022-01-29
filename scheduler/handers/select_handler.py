@@ -22,9 +22,9 @@ class SelectHandler(Handler):
 
     def select_items(self):
         columns = self.parser.columns
-        anonymous_table = self.db_meta["table_kv"][self.db_name][self.parser.tables[0]]
+        anonymous_table = self.db_meta[self.db_name]["table_kv"][self.parser.tables[0]]
         if columns == ['*']:
-            for _, item in self.db_meta["cipher"][self.db_name][anonymous_table].items():
+            for _, item in self.db_meta[self.db_name]["cipher"][self.parser.tables[0]].items():
                 for k, v in item.items():
                     if k == "SYMMETRIC":
                         self.select_ast.items.append(v)

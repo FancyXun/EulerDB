@@ -17,13 +17,18 @@ ENCRYPT_SQL_TYPE = {
 }
 
 CIPHERS = {
-    "VARCHAR": encrypt.FernetCipher(),
-    "INT": [encrypt.OPECipher(), encrypt.FernetCipher()]
+    "VARCHAR": encrypt.AESCipher("8888888"),
+    "INT": [encrypt.OPECipher(), encrypt.AESCipher("8888888")]
 }
 
-CIPHERS_META ={
+CIPHERS_META = {
     "OPE": encrypt.OPECipher(),
-    "SYMMETRIC": encrypt.FernetCipher()
+    "SYMMETRIC": encrypt.AESCipher("8888888")
+}
+
+FUNC_CIPHERS = {
+    "max": "OPE",
+    "min": "OPE"
 }
 
 
@@ -39,21 +44,25 @@ class Delta(object):
 
     def update_delta(self, db_name, table_name, anonymous_meta, table_meta):
         if self.meta:
-            if db_name not in self.meta["plain"].keys():
+            if db_name not in self.meta.keys():
                 # update database
-                self.meta["plain"].update({db_name: {table_name["origin"]: table_meta}})
-                self.meta["cipher"].update({db_name: {table_name["anonymous"]: anonymous_meta}})
-                self.meta["table_kv"].update({db_name: {table_name["origin"]: table_name["anonymous"]}})
+                self.meta[db_name] = {"plain": {table_name["origin"]: table_meta},
+                                      "cipher": {table_name["origin"]: anonymous_meta},
+                                      "table_kv": {table_name["origin"]: table_name["anonymous"]}
+                                      }
             else:
-                self.meta["plain"][db_name].update({table_name["origin"]: table_meta})
-                self.meta["cipher"][db_name].update({table_name["anonymous"]: anonymous_meta})
-                self.meta["table_kv"][db_name].update({table_name["origin"]: table_name["anonymous"]})
+                self.meta[db_name]["plain"].update({table_name["origin"]: table_meta})
+                self.meta[db_name]["cipher"].update({table_name["origin"]: anonymous_meta})
+                self.meta[db_name]["table_kv"].update({table_name["origin"]: table_name["anonymous"]})
 
         else:
-            self.meta = {"plain": {db_name: {table_name["origin"]: table_meta}},
-                         "cipher": {db_name: {table_name["anonymous"]: anonymous_meta}},
-                         "table_kv": {db_name: {table_name["origin"]: table_name["anonymous"]}}
-                         }
+            self.meta = {
+                db_name:
+                    {"plain": {table_name["origin"]: table_meta},
+                     "cipher": {table_name["origin"]: anonymous_meta},
+                     "table_kv": {table_name["origin"]: table_name["anonymous"]}
+                     }
+            }
         return self.meta
 
     def delete_delta(self):

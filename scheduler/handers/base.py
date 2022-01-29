@@ -14,5 +14,5 @@ class Handler:
 
     def check_table(self):
         assert len(self.parser.tables) == 1
-        if self.parser.tables[0] not in self.db_meta["table_kv"][self.db_name].keys():
+        if self.parser.tables[0] not in self.db_meta[self.db_name]["table_kv"].keys():
             raise Exception("NOT FOUND TABLE IN ".format(self.parser.tables[0]))

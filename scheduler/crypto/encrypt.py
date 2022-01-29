@@ -18,7 +18,9 @@ from base64 import b64encode
 from hashlib import sha256
 import random
 
+from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 from gmssl.sm4 import CryptSM4, SM4_ENCRYPT, SM4_DECRYPT
 from scheduler.crypto.ope.ope import OPE
@@ -26,6 +28,76 @@ from scheduler.crypto.ope.ope import OPE
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
+
+
+class AESCrypto(object):
+
+    AES_CBC_KEY = b'a\x14\x04.\x8a\xa2a\xec,\xf1\x07\xc2l\x19|`g\xae\xba\tl\xc4\xa7\xac$\x11\xef\x0f\xeaN\x01\xcf'
+    AES_CBC_IV = b'\xd3|\xf6(\xc3\x15\x08\xeaq\xc4}\xbf\xc3\x95\\{'
+
+    @classmethod
+    def encrypt(cls, data, mode='cbc'):
+        func_name = '{}_encrypt'.format(mode)
+        func = getattr(cls, func_name)
+        return func(data)
+
+    @classmethod
+    def decrypt(cls, data, mode='cbc'):
+        func_name = '{}_decrypt'.format(mode)
+        func = getattr(cls, func_name)
+        return func(data)
+
+    @staticmethod
+    def pkcs7_padding(data):
+        if not isinstance(data, bytes):
+            data = data.encode()
+
+        padder = padding.PKCS7(algorithms.AES.block_size).padder()
+
+        padded_data = padder.update(data) + padder.finalize()
+
+        return padded_data
+
+    @classmethod
+    def cbc_encrypt(cls, data):
+        if not isinstance(data, bytes):
+            data = data.encode()
+
+        cipher = Cipher(algorithms.AES(cls.AES_CBC_KEY),
+                        modes.CBC(cls.AES_CBC_IV),
+                        backend=default_backend())
+        encryptor = cipher.encryptor()
+
+        padded_data = encryptor.update(cls.pkcs7_padding(data))
+
+        return padded_data
+
+    @classmethod
+    def cbc_decrypt(cls, data):
+        if not isinstance(data, bytes):
+            data = data.encode()
+
+        cipher = Cipher(algorithms.AES(cls.AES_CBC_KEY),
+                        modes.CBC(cls.AES_CBC_IV),
+                        backend=default_backend())
+        decryptor = cipher.decryptor()
+
+        uppaded_data = cls.pkcs7_unpadding(decryptor.update(data))
+
+        uppaded_data = uppaded_data.decode()
+        return uppaded_data
+
+    @staticmethod
+    def pkcs7_unpadding(padded_data):
+        unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+        data = unpadder.update(padded_data)
+
+        try:
+            uppadded_data = data + unpadder.finalize()
+        except ValueError:
+            raise Exception('Invalid encrypted information!')
+        else:
+            return uppadded_data
 
 
 class AESCipher:

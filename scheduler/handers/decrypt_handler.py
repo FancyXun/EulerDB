@@ -24,5 +24,7 @@ class DecryptHandler(Handler):
 
     @staticmethod
     def __decrypt__(enc):
+        if isinstance(enc, int):
+            return CIPHERS_META["OPE"].decrypt(enc)
         return CIPHERS_META["SYMMETRIC"].decrypt(enc)
 

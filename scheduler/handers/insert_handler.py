@@ -26,11 +26,11 @@ class InsertHandler(Handler):
         self.ele_rewrite()
 
     def ele_rewrite(self):
-        anonymous_table = self.db_meta["table_kv"][self.db_name][self.parser.tables[0]]
+        anonymous_table = self.db_meta[self.db_name]["table_kv"][self.parser.tables[0]]
         columns = []
         values = []
         for col, val in zip(self.parser.columns, self.parser.values):
-            columns_meta = self.db_meta["cipher"][self.db_name][anonymous_table][col]
+            columns_meta = self.db_meta[self.db_name]["cipher"][self.parser.tables[0]][col]
             for k, v in columns_meta.items():
                 if CIPHERS_META[k].input == 'INT':
                     values.append(str(CIPHERS_META[k].encrypt(int(val))))
