@@ -8,13 +8,16 @@ META_PATH = '../data/meta.json'
 ENCRYPT_SQL_TYPE = {
     "INT":
         {
-            "OPE": "INT", "SYMMETRIC": "VARCHAR(300)"
+            "OPE": "INT",
+            "SYMMETRIC": "VARCHAR(300)"
         },
     "VARCHAR":
         {
-            "SYMMETRIC": "VARCHAR(300)"
+            "SYMMETRIC": 10
         }
 }
+
+FUZZY_TYPE = 'VARCHAR(2000)'
 
 CIPHERS = {
     "VARCHAR": encrypt.AESCipher("8888888"),
@@ -42,26 +45,16 @@ class Delta(object):
             cls.meta = cls.load_delta()
         return Delta.__instance
 
-    def update_delta(self, db_name, table_name, anonymous_meta, table_meta):
+    def update_delta(self, db_name, table_meta):
         if self.meta:
             if db_name not in self.meta.keys():
-                # update database
-                self.meta[db_name] = {"plain": {table_name["origin"]: table_meta},
-                                      "cipher": {table_name["origin"]: anonymous_meta},
-                                      "table_kv": {table_name["origin"]: table_name["anonymous"]}
-                                      }
+                pass
             else:
-                self.meta[db_name]["plain"].update({table_name["origin"]: table_meta})
-                self.meta[db_name]["cipher"].update({table_name["origin"]: anonymous_meta})
-                self.meta[db_name]["table_kv"].update({table_name["origin"]: table_name["anonymous"]})
+                pass
 
         else:
             self.meta = {
-                db_name:
-                    {"plain": {table_name["origin"]: table_meta},
-                     "cipher": {table_name["origin"]: anonymous_meta},
-                     "table_kv": {table_name["origin"]: table_name["anonymous"]}
-                     }
+                db_name: table_meta
             }
         return self.meta
 

@@ -30,17 +30,33 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_create_table(self):
-        # create table
+        """
+
+        """
         create_table_sql = 'create table if not exists user(' \
-                           'id int, name varchar(20), age int, sex varchar(5), ' \
+                           'id_card varchar(40), name varchar(20), age int, sex varchar(5), ' \
                            'score int, nick_name varchar(20), comments varchar(200));'
-        execution_context.invoke(db_conn.connection, create_table_sql)
+        encrypt_cols = {
+            "id_card": {
+                "fuzzy": True,
+                "arithmetic": False,
+            },
+            "name": {
+                "fuzzy": True,
+                "arithmetic": False
+            },
+            "age": {
+                "fuzzy": True,
+                "arithmetic": False
+            }
+        }
+        execution_context.invoke(db_conn.connection, create_table_sql, encrypt_cols)
         self.assertEqual(True, True)
 
     def test_insert(self):
         for i in range(1000000):
-            query = 'insert into user(id, name, age, sex, score, nick_name, comments) values (' + str(
-                random.randint(1000, 10000)) + ',"' + ''.join(
+            query = 'insert into user(id_card, name, age, sex, score, nick_name, comments) values ( "' + str(
+                random.randint(1000000000000000000, 1000000000000000000000000)) + '","' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 5)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '","' + ''.join(
@@ -100,6 +116,13 @@ class ContextTestCase(unittest.TestCase):
 
     def test_select_min(self):
         query = 'select min(id) from user'
+        result = execution_context.invoke(db_conn.connection, query)
+        for i in result:
+            print(i)
+        self.assertEqual(True, True)
+
+    def test_select_like(self):
+        query = 'select id from user where name like "%dghsg%"'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)

@@ -1,17 +1,30 @@
+import time
+import hashlib
+
 from sql_parsing import parse_mysql as parse
 from sql_parsing import format
-from scheduler.schema.metadata import Delta, CIPHERS_META, FUNC_CIPHERS
+from scheduler.schema.metadata import Delta
+from scheduler.schema.metadata import  \
+    CIPHERS_META, \
+    FUNC_CIPHERS, \
+    ENCRYPT_SQL_TYPE, \
+    FUZZY_TYPE
 
 
 class Rewriter(object):
-    def __init__(self, db):
+    def __init__(self, db, encrypted_cols=None):
         self.db = db
-        self.db_meta = Delta().meta[db]
+        self.db_meta = {}
+        self.encrypted_cols = encrypted_cols
+        if db in Delta().meta.keys():
+            self.db_meta = Delta().meta[db]
 
     def rewrite_query(self, query):
         """
 
         """
+        if self.encrypted_cols:
+            return self.rewrite_table(query)
         result = self.encry_items(parse(query))
         return format(result)
 
@@ -30,19 +43,24 @@ class Rewriter(object):
         """
         if 'insert' in json.keys():
             insert_table = json['insert']
-            json['insert'] = self.db_meta ['table_kv'][insert_table]
+            enc_table_meta = self.db_meta[insert_table]
+            json['insert'] = enc_table_meta['anonymous']
             if 'columns' in json.keys():
                 columns = json['columns']
                 new_columns = []
                 for col in columns:
-                    new_columns.extend(list(self.db_meta ['cipher'][insert_table][col].values()))
+                    if enc_table_meta['columns'][col]['PLAINTEXT']:
+                        new_columns.append(col)
+                    else:
+                        new_columns.extend(
+                            list(enc_table_meta['columns'][col]['ENC_COLUMNS'].keys()))
                 json['columns'] = new_columns
-            if 'query' in json.keys():
-                values = json['query']['select']
-                new_values = []
-                for value in values:
-                    new_values.extend(self.encrypt_value(value['value']))
-                json['query']['select'] = new_values
+                if 'query' in json.keys():
+                    values = json['query']['select']
+                    new_values = []
+                    for value in values:
+                        new_values.extend(self.encrypt_value(value['value']))
+                    json['query']['select'] = new_values
         if 'select' in json.keys():
             if 'from' in json.keys():
                 select_table = json['from']
@@ -102,4 +120,53 @@ class Rewriter(object):
 
     def rewrite_orderby(self, json, table):
         return {'value': self.db_meta['cipher'][table][json['value']]['OPE']}
+
+    def rewrite_table(self, query):
+        json = parse(query)
+        if 'create table' not in json.keys():
+            raise Exception("Bad create table query: {}".format(query))
+        create_table = json['create table']
+        table_name = create_table['name']
+        columns = create_table['columns']
+        enc_columns = []
+        columns_kv = {}
+        for col in columns:
+            col_name = col['name']
+            col_type = col['type']
+            columns_kv[col_name] = {}
+            columns_kv[col_name]['ENC_COLUMNS'] = {}
+            if col['name'] not in self.encrypted_cols:
+                for t_k, t_v in col_type.items():
+                    if t_v:
+                        enc_col_type = t_k + '(' + str(t_v) + ')'
+                    else:
+                        enc_col_type = t_k
+                    enc_columns.append(col_name + ' ' + enc_col_type)
+                    columns_kv[col_name]['PLAINTEXT'] = True
+                continue
+            val = ENCRYPT_SQL_TYPE.get(list(col['type'].keys())[0].upper())
+            for k, v in val.items():
+                enc_col_name = col_name.upper() + k
+                for t_k, t_v in col_type.items():
+                    if t_v:
+                        enc_col_type = t_k + '(' + str(t_v * v) + ')'
+                    else:
+                        enc_col_type = v
+                    enc_columns.append(enc_col_name + ' ' + enc_col_type)
+                    columns_kv[col_name]['ENC_COLUMNS'].update({enc_col_name: k})
+            if self.encrypted_cols[col['name']]['fuzzy']:
+                enc_col_name = col_name.upper() + 'FUZZY'
+                enc_columns.append(enc_col_name + ' ' + FUZZY_TYPE)
+                columns_kv[col_name]['ENC_COLUMNS'].update({enc_col_name: ""})
+            columns_kv[col_name]['PLAINTEXT'] = False
+        anonymous_table = "TABEL_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+        query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + ');'
+        table_meta = {
+            table_name: {
+                'anonymous': anonymous_table,
+                'columns': columns_kv
+            }
+        }
+        Delta().update_delta(self.db, table_meta)
+        return query
 

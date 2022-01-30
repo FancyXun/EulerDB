@@ -4,12 +4,11 @@ from scheduler.compile.parser import Parser
 from scheduler.handers.decrypt_handler import DecryptHandler
 
 
-def invoke(conn, query):
+def invoke(conn, query, encrypted_cols=None):
     """
 
     """
-    # todo: get compile command from query
     executor = RemoteExecutor(conn)
-    executor.call(query, Parser(query))
+    executor.call(query, Parser(query), encrypted_cols)
     return DecryptQueryExecutor(DecryptHandler).decrypt(executor.result)
 

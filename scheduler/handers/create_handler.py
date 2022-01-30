@@ -1,4 +1,5 @@
-import time,hashlib
+import time
+import hashlib
 
 from scheduler.compile import parse
 from scheduler.handers.base import Handler
@@ -6,8 +7,9 @@ from scheduler.schema.metadata import Delta, ENCRYPT_SQL_TYPE
 
 
 class CreateTableHandler(Handler):
-    def __init__(self, original_query, parser, db_name):
+    def __init__(self, original_query, parser, db_name, encrypted_cols):
         super().__init__(original_query, parser, db_name)
+        self.encrypted_cols = encrypted_cols
         self.__rewrite__()
 
     def __repr__(self):
