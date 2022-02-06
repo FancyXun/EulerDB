@@ -101,6 +101,8 @@ class AESCrypto(object):
 
 
 class AESCipher:
+    input = 'STRING'
+    output = 'STRING'
 
     def __init__(self, key):
         self.key = bytes.fromhex(sha256(key.encode('utf8')).hexdigest())
@@ -178,6 +180,7 @@ def key_generator(key_size=32, rand_seed=None):
 
 class FernetCipher:
     input = 'STRING'
+    output = 'STRING'
 
     def __init__(self):
         self.cipher = Fernet(b'AvA1crC_CVMQe4LskY6w7J7R3BmemH02A7utNimOHCQ=')
@@ -191,6 +194,7 @@ class FernetCipher:
 
 class OPECipher:
     input = 'INT'
+    output = 'INT'
 
     def __init__(self):
         self.cipher = OPE(b'ZvtU2iyA0E5byRp6YMxbsoEnk1vKPxtm6IcLt4ZxuK0=')
@@ -200,3 +204,15 @@ class OPECipher:
 
     def decrypt(self, enc):
         return self.cipher.decrypt(enc)
+
+
+class FuzzyCipher:
+    input = 'STRING'
+    output = 'STRING'
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def encrypt(raw):
+        return "fuzzy"

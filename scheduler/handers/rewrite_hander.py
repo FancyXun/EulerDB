@@ -4,7 +4,7 @@ import hashlib
 from sql_parsing import parse_mysql as parse
 from sql_parsing import format
 from scheduler.schema.metadata import Delta
-from scheduler.schema.metadata import  \
+from scheduler.schema.metadata import \
     CIPHERS_META, \
     FUNC_CIPHERS, \
     ENCRYPT_SQL_TYPE, \
@@ -58,8 +58,12 @@ class Rewriter(object):
                 if 'query' in json.keys():
                     values = json['query']['select']
                     new_values = []
-                    for value in values:
-                        new_values.extend(self.encrypt_value(value['value']))
+                    for col, value in zip(columns, values):
+                        if enc_table_meta['columns'][col]['PLAINTEXT']:
+                            new_values.append(value)
+                        else:
+                            for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].values():
+                                new_values.append(self.encrypt_value(value['value'], enc))
                     json['query']['select'] = new_values
         if 'select' in json.keys():
             if 'from' in json.keys():
@@ -73,15 +77,16 @@ class Rewriter(object):
         return json
 
     @staticmethod
-    def encrypt_value(value):
+    def encrypt_value(value, enc):
         if isinstance(value, int):
-            return [{'value': CIPHERS_META["OPE"].encrypt(int(value))},
-                    {'value': {'literal': CIPHERS_META["SYMMETRIC"].encrypt(str(value))}}]
+            if CIPHERS_META[enc].input == 'INT':
+                return {'value': CIPHERS_META[enc].encrypt(int(value))}
+            else:
+                return {'value': {'literal': CIPHERS_META[enc].encrypt(str(value))}}
         elif isinstance(value, dict):
-            return [{
+            return {
                 'value':
-                    {'literal':
-                         CIPHERS_META["SYMMETRIC"].encrypt(str(value['literal']))}}]
+                    {'literal': CIPHERS_META[enc].encrypt(str(value['literal']))}}
         else:
             raise Exception("Bad value in json {}".format(value))
 
@@ -157,7 +162,7 @@ class Rewriter(object):
             if self.encrypted_cols[col['name']]['fuzzy']:
                 enc_col_name = col_name.upper() + 'FUZZY'
                 enc_columns.append(enc_col_name + ' ' + FUZZY_TYPE)
-                columns_kv[col_name]['ENC_COLUMNS'].update({enc_col_name: ""})
+                columns_kv[col_name]['ENC_COLUMNS'].update({enc_col_name: "FUZZY"})
             columns_kv[col_name]['PLAINTEXT'] = False
         anonymous_table = "TABEL_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
         query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + ');'
@@ -169,4 +174,3 @@ class Rewriter(object):
         }
         Delta().update_delta(self.db, table_meta)
         return query
-

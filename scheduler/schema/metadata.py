@@ -26,7 +26,8 @@ CIPHERS = {
 
 CIPHERS_META = {
     "OPE": encrypt.OPECipher(),
-    "SYMMETRIC": encrypt.AESCipher("8888888")
+    "SYMMETRIC": encrypt.AESCipher("8888888"),
+    "FUZZY": encrypt.FuzzyCipher()
 }
 
 FUNC_CIPHERS = {
@@ -48,9 +49,9 @@ class Delta(object):
     def update_delta(self, db_name, table_meta):
         if self.meta:
             if db_name not in self.meta.keys():
-                pass
+                self.meta.update({db_name: table_meta})
             else:
-                pass
+                self.meta[db_name].update(table_meta)
 
         else:
             self.meta = {
