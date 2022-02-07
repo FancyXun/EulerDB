@@ -215,4 +215,14 @@ class FuzzyCipher:
 
     @staticmethod
     def encrypt(raw):
-        return "fuzzy"
+        result = ""
+        if raw.isalpha() or raw.isalnum() or raw.isdigit():
+            assert len(raw) >= 3
+            for i in range(len(raw)-2):
+                result = result + AESCipher("points").encrypt(str(raw)[i: i+3])
+        else:
+            assert len(raw) >= 2
+            for i in range(len(raw)-1):
+                result = result + AESCipher("points").encrypt(str(raw)[i: i+2])
+
+        return result

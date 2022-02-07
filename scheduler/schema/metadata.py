@@ -13,20 +13,20 @@ ENCRYPT_SQL_TYPE = {
         },
     "VARCHAR":
         {
-            "SYMMETRIC": 10
+            "SYMMETRIC": 20
         }
 }
 
 FUZZY_TYPE = 'VARCHAR(2000)'
 
 CIPHERS = {
-    "VARCHAR": encrypt.AESCipher("8888888"),
-    "INT": [encrypt.OPECipher(), encrypt.AESCipher("8888888")]
+    "VARCHAR": encrypt.AESCipher("points"),
+    "INT": [encrypt.OPECipher(), encrypt.AESCipher("points")]
 }
 
 CIPHERS_META = {
     "OPE": encrypt.OPECipher(),
-    "SYMMETRIC": encrypt.AESCipher("8888888"),
+    "SYMMETRIC": encrypt.AESCipher("points"),
     "FUZZY": encrypt.FuzzyCipher()
 }
 

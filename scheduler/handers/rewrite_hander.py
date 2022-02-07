@@ -91,7 +91,7 @@ class Rewriter(object):
         else:
             raise Exception("Bad value in json {}".format(value))
 
-    def rewrite_where(self, json, table):
+    def rewrite_where(self, json, table, cipher='SYMMETRIC'):
         columns_meta = self.db_meta[table]['columns']
         if isinstance(json, dict):
             for k, v in json.items():
@@ -99,14 +99,26 @@ class Rewriter(object):
                     if not columns_meta[v[0]]['PLAINTEXT']:
                         return {'eq': [columns_meta[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
                                        self.rewrite_where(v[1], table)]}
+                if k == 'like':
+                    if not columns_meta[v[0]]['PLAINTEXT']:
+                        return {
+                            'like': [columns_meta[v[0]]['ENC_COLUMNS']["FUZZY"],
+                                     self.rewrite_where(v[1], table, 'FUZZY')]
+                        }
                 if k == 'and':
-                    return {'and': [self.rewrite_where(a_v, table) for a_v in v]}
+                    return {'and': [self.rewrite_where(a_v, table, cipher) for a_v in v]}
                 if k == 'literal':
-                    return {'literal': self.rewrite_where(v, table)}
+                    return {'literal': self.rewrite_where(v, table, cipher)}
         if isinstance(json, int):
-            return CIPHERS_META["SYMMETRIC"].encrypt(str(json))
+            if cipher == 'FUZZY':
+                json = str(json).replace("%", "")
+                return "%"+CIPHERS_META[cipher].encrypt(str(json))+"%"
+            return CIPHERS_META[cipher].encrypt(str(json))
         if isinstance(json, str):
-            return CIPHERS_META["SYMMETRIC"].encrypt(json)
+            if cipher == 'FUZZY':
+                json = json.replace("%", "")
+                return "%" + CIPHERS_META[cipher].encrypt(json) + "%"
+            return CIPHERS_META[cipher].encrypt(json)
         return json
 
     def rewrite_select_items(self, json, table, cipher='SYMMETRIC'):

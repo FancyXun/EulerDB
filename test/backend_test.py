@@ -46,7 +46,7 @@ class ContextTestCase(unittest.TestCase):
                 "arithmetic": False
             },
             "age": {
-                "fuzzy": True,
+                "fuzzy": False,
                 "arithmetic": False
             }
         }
@@ -57,7 +57,7 @@ class ContextTestCase(unittest.TestCase):
         for i in range(1000000):
             query = 'insert into user(id_card, name, age, sex, score, nick_name, comments) values ( "' + str(
                 random.randint(1000000000000000000, 1000000000000000000000000)) + '","' + ''.join(
-                random.sample('zyxwvutsrqponmlkjihgfedcba', 5)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
+                random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '","' + ''.join(
                 random.sample('zyxwvutsrqpondgsghgsfgyftuywiecvdbhsbdhgshfdgsgfysgmlkjihgfedcba', 30)) + '")'
@@ -122,7 +122,7 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_select_like(self):
-        query = 'select id_card from user where name like "%dghsg%"'
+        query = 'select id_card, name from user where id_card like "%2877%"'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
