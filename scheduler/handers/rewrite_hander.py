@@ -18,6 +18,7 @@ class Rewriter(object):
         self.encrypted_cols = encrypted_cols
         if db in Delta().meta.keys():
             self.db_meta = Delta().meta[db]
+        self.select_enc_idx = []
 
     def rewrite_query(self, query):
         """
@@ -25,10 +26,10 @@ class Rewriter(object):
         """
         if self.encrypted_cols:
             return self.rewrite_table(query)
-        result = self.encry_items(parse(query))
+        result = self.encrypt_items(parse(query))
         return format(result)
 
-    def encry_items(self, json):
+    def encrypt_items(self, json):
         """
         insert:
         {'columns': ['id', 'name', 'age', 'sex', 'score', 'nick_name', 'comment'],
@@ -53,7 +54,7 @@ class Rewriter(object):
                         new_columns.append(col)
                     else:
                         new_columns.extend(
-                            list(enc_table_meta['columns'][col]['ENC_COLUMNS'].keys()))
+                            list(enc_table_meta['columns'][col]['ENC_COLUMNS'].values()))
                 json['columns'] = new_columns
                 if 'query' in json.keys():
                     values = json['query']['select']
@@ -62,14 +63,14 @@ class Rewriter(object):
                         if enc_table_meta['columns'][col]['PLAINTEXT']:
                             new_values.append(value)
                         else:
-                            for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].values():
+                            for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].keys():
                                 new_values.append(self.encrypt_value(value['value'], enc))
                     json['query']['select'] = new_values
         if 'select' in json.keys():
             if 'from' in json.keys():
                 select_table = json['from']
                 json['select'] = self.rewrite_select_items(json['select'], select_table)
-                json['from'] = self.db_meta['table_kv'][select_table]
+                json['from'] = self.db_meta[select_table]['anonymous']
                 if 'where' in json.keys():
                     json['where'] = self.rewrite_where(json['where'], select_table)
                 if 'orderby' in json.keys():
@@ -91,12 +92,13 @@ class Rewriter(object):
             raise Exception("Bad value in json {}".format(value))
 
     def rewrite_where(self, json, table):
-        columns_meta = self.db_meta['cipher'][table]
+        columns_meta = self.db_meta[table]['columns']
         if isinstance(json, dict):
             for k, v in json.items():
                 if k == 'eq':
-                    return {'eq': [columns_meta[v[0]]["SYMMETRIC"],
-                                   self.rewrite_where(v[1], table)]}
+                    if not columns_meta[v[0]]['PLAINTEXT']:
+                        return {'eq': [columns_meta[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
+                                       self.rewrite_where(v[1], table)]}
                 if k == 'and':
                     return {'and': [self.rewrite_where(a_v, table) for a_v in v]}
                 if k == 'literal':
@@ -109,11 +111,21 @@ class Rewriter(object):
 
     def rewrite_select_items(self, json, table, cipher='SYMMETRIC'):
         if json == "*":
-            return [v['SYMMETRIC'] for _, v in self.db_meta['cipher'][table].items()]
+            result = []
+            for k, v in self.db_meta[table]['columns'].items():
+                if v['PLAINTEXT']:
+                    result.append(k)
+                else:
+                    result.append(v['ENC_COLUMNS'][cipher])
+            return result
         if isinstance(json, list):
             return [self.rewrite_select_items(v['value'], table) for v in json]
         if isinstance(json, str):
-            return self.db_meta['cipher'][table][json][cipher]
+            col = self.db_meta[table]['columns'][json]
+            if col['PLAINTEXT']:
+                return json
+            else:
+                return col['ENC_COLUMNS'][cipher]
         if isinstance(json, dict):
             result = {}
             for k, v in json.items():
@@ -123,8 +135,15 @@ class Rewriter(object):
                     result[k] = self.rewrite_select_items(v, table)
             return result
 
+    def get_cipher_columns(self):
+        pass
+
     def rewrite_orderby(self, json, table):
-        return {'value': self.db_meta['cipher'][table][json['value']]['OPE']}
+        col = self.db_meta[table]['columns'][json['value']]
+        if col['PLAINTEXT']:
+            return json
+        else:
+            return {'value': col['ENC_COLUMNS']['OPE']}
 
     def rewrite_table(self, query):
         json = parse(query)
@@ -158,11 +177,11 @@ class Rewriter(object):
                     else:
                         enc_col_type = v
                     enc_columns.append(enc_col_name + ' ' + enc_col_type)
-                    columns_kv[col_name]['ENC_COLUMNS'].update({enc_col_name: k})
+                    columns_kv[col_name]['ENC_COLUMNS'].update({k: enc_col_name})
             if self.encrypted_cols[col['name']]['fuzzy']:
                 enc_col_name = col_name.upper() + 'FUZZY'
                 enc_columns.append(enc_col_name + ' ' + FUZZY_TYPE)
-                columns_kv[col_name]['ENC_COLUMNS'].update({enc_col_name: "FUZZY"})
+                columns_kv[col_name]['ENC_COLUMNS'].update({"FUZZY": enc_col_name})
             columns_kv[col_name]['PLAINTEXT'] = False
         anonymous_table = "TABEL_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
         query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + ');'

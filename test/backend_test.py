@@ -80,49 +80,49 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_select_part_items(self):
-        query = 'select id, name from user'
+        query = 'select id_card, name from user'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
         self.assertEqual(True, True)
 
     def test_select_where(self):
-        query = 'select id, name from user where id = 2090'
+        query = 'select id_card, name, age from user where age = 20'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
         self.assertEqual(True, True)
 
     def test_select_where1(self):
-        query = 'select id, name from user where id = 2090 and name = "gbmyx"'
+        query = 'select id_card, name from user where id_card = "837093287535721600955409" and name = "uyfep"'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
         self.assertEqual(True, True)
 
     def test_select_order_by(self):
-        query = 'select id, name, score from user order by score limit 100'
+        query = 'select id_card, name, age from user order by age limit 100'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
         self.assertEqual(True, True)
 
     def test_select_max(self):
-        query = 'select max(id) from user'
+        query = 'select max(age) from user'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
         self.assertEqual(True, True)
 
     def test_select_min(self):
-        query = 'select min(id) from user'
+        query = 'select min(age) from user'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
         self.assertEqual(True, True)
 
     def test_select_like(self):
-        query = 'select id from user where name like "%dghsg%"'
+        query = 'select id_card from user where name like "%dghsg%"'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
