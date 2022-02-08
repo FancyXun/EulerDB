@@ -10,21 +10,13 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from collections import namedtuple
-from functools import update_wrapper
 from types import FunctionType
 
 from dots import Null
 from parsing_future import get_function_arguments, get_function_name, get_function_defaults
-from mo_logs import Log
-from mo_logs.exceptions import Except
-from mo_math import randoms
-from mo_threads import Lock
-from mo_times.dates import Date
-from mo_times.durations import DAY
 
 
 class cache(object):
-
     """
     :param func: ASSUME FIRST PARAMETER OF `func` IS `self`
     :param duration: USE CACHE IF LAST CALL WAS LESS THAN duration AGO
@@ -39,14 +31,6 @@ class cache(object):
             return wrap_function(_SimpleCache(), func)
         else:
             return object.__new__(cls)
-
-    def __init__(self, duration=DAY, lock=False, ignore=None):
-        self.timeout = duration
-        self.ignore=ignore
-        if lock:
-            self.locker = Lock()
-        else:
-            self.locker = _FakeLock()
 
     def __call__(self, func):
         return wrap_function(self, func)
@@ -71,11 +55,6 @@ def wrap_function(cache_store, func_):
             k: v
             for k, v in zip(reversed(params), reversed(get_function_defaults(func_)))
         }
-
-
-
-
-
     func_args = get_function_arguments(func_)
     if len(func_args) > 0 and func_args[0] == "self":
         using_self = True
@@ -83,56 +62,6 @@ def wrap_function(cache_store, func_):
     else:
         using_self = False
         func = lambda self, *args: func_(*args)
-
-    def output(*args, **kwargs):
-        if kwargs:
-            Log.error("Sorry, caching only works with ordered parameter, not keyword arguments")
-
-        with cache_store.locker:
-            if using_self:
-                self = args[0]
-                args = args[1:]
-            else:
-                self = cache_store
-
-            now = Date.now()
-            try:
-                _cache = getattr(self, attr_name)
-            except Exception:
-                _cache = {}
-                setattr(self, attr_name, _cache)
-
-            if randoms.int(100) == 0:
-                # REMOVE OLD CACHE
-                _cache = {k: v for k, v in _cache.items() if v.timeout == None or v.timeout > now}
-                setattr(self, attr_name, _cache)
-
-            timeout, key, value, exception = _cache.get(args, (Null, Null, Null, Null))
-
-        if now >= timeout:
-            value = func(self, *args)
-            with cache_store.locker:
-                _cache[args] = CacheElement(now + cache_store.timeout, args, value, None)
-            return value
-
-        if value == None:
-            if exception == None:
-                try:
-                    value = func(self, *args)
-                    with cache_store.locker:
-                        _cache[args] = CacheElement(now + cache_store.timeout, args, value, None)
-                    return value
-                except Exception as e:
-                    e = Except.wrap(e)
-                    with cache_store.locker:
-                        _cache[args] = CacheElement(now + cache_store.timeout, args, None, e)
-                    raise e
-            else:
-                raise exception
-        else:
-            return value
-
-    return update_wrapper(output, func)
 
 
 CacheElement = namedtuple("CacheElement", ("timeout", "key", "value", "exception"))
@@ -144,5 +73,3 @@ class _FakeLock():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
-
-
