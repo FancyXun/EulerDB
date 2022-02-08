@@ -5,7 +5,8 @@ class DecryptQueryExecutor(AbstractQueryExecutor):
     def __init__(self, handler):
         super().__init__(handler)
 
-    def decrypt(self, result):
+    def decrypt(self, executor):
+        result = executor.result
         if result:
-            return self.handler(result).decrypt()
-        return None
+            return self.handler(executor).decrypt(result)
+        return []

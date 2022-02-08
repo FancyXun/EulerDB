@@ -66,7 +66,7 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_select(self):
-        query = 'select * from user '
+        query = 'select * from user limit 1000'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
@@ -80,7 +80,7 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_select_part_items(self):
-        query = 'select id_card, name from user'
+        query = 'select id_card, name, score from user limit 1000'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
@@ -94,7 +94,7 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_select_where1(self):
-        query = 'select id_card, name from user where id_card = "837093287535721600955409" and name = "uyfep"'
+        query = 'select id_card, name from user where id_card = "496715970993917044442778" and name = "iezlcpnjws"'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)
@@ -122,7 +122,7 @@ class ContextTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
     def test_select_like(self):
-        query = 'select id_card, name from user where id_card like "%2877%"'
+        query = 'select id_card, name from user where name like "rax%fpb%"'
         result = execution_context.invoke(db_conn.connection, query)
         for i in result:
             print(i)

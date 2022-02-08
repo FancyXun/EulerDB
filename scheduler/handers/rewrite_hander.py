@@ -18,7 +18,7 @@ class Rewriter(object):
         self.encrypted_cols = encrypted_cols
         if db in Delta().meta.keys():
             self.db_meta = Delta().meta[db]
-        self.select_enc_idx = []
+        self.select_state = []
 
     def rewrite_query(self, query):
         """
@@ -111,32 +111,51 @@ class Rewriter(object):
                     return {'literal': self.rewrite_where(v, table, cipher)}
         if isinstance(json, int):
             if cipher == 'FUZZY':
-                json = str(json).replace("%", "")
-                return "%"+CIPHERS_META[cipher].encrypt(str(json))+"%"
+                partial_list = str(json).split("%")
+                result = []
+                for partial in partial_list:
+                    if partial == "":
+                        result.append("")
+                        continue
+                    else:
+                        result.append(CIPHERS_META[cipher].encrypt(str(partial)))
+                return "%".join(result)
             return CIPHERS_META[cipher].encrypt(str(json))
         if isinstance(json, str):
             if cipher == 'FUZZY':
-                json = json.replace("%", "")
-                return "%" + CIPHERS_META[cipher].encrypt(json) + "%"
+                partial_list = json.split("%")
+                result = []
+                for partial in partial_list:
+                    if partial == "":
+                        result.append("")
+                        continue
+                    else:
+                        result.append(CIPHERS_META[cipher].encrypt(partial))
+                return "%".join(result)
             return CIPHERS_META[cipher].encrypt(json)
         return json
 
     def rewrite_select_items(self, json, table, cipher='SYMMETRIC'):
         if json == "*":
             result = []
-            for k, v in self.db_meta[table]['columns'].items():
+            for idx, (k, v) in enumerate(self.db_meta[table]['columns'].items()):
                 if v['PLAINTEXT']:
                     result.append(k)
+                    self.select_state.append("PLAINTEXT")
                 else:
                     result.append(v['ENC_COLUMNS'][cipher])
+                    self.select_state.append(cipher)
             return result
         if isinstance(json, list):
+
             return [self.rewrite_select_items(v['value'], table) for v in json]
         if isinstance(json, str):
             col = self.db_meta[table]['columns'][json]
             if col['PLAINTEXT']:
+                self.select_state.append("PLAINTEXT")
                 return json
             else:
+                self.select_state.append(cipher)
                 return col['ENC_COLUMNS'][cipher]
         if isinstance(json, dict):
             result = {}

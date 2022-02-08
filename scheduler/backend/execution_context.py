@@ -10,5 +10,5 @@ def invoke(conn, query, encrypted_cols=None):
     """
     executor = RemoteExecutor(conn)
     executor.call(query, Parser(query), encrypted_cols)
-    return DecryptQueryExecutor(DecryptHandler).decrypt(executor.result)
+    return DecryptQueryExecutor(DecryptHandler).decrypt(executor)
 

@@ -11,6 +11,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.conn = conn
         self.result = None
         self.encrypted_cols = None
+        self.rewriter = None
 
     def call(self, query, parser, encrypted_cols):
         """
@@ -46,6 +47,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                     self.conn.commit()
 
     def dispatch(self, query):
-        return Rewriter(self.conn.database, self.encrypted_cols).rewrite_query(query)
+        self.rewriter = Rewriter(self.conn.database, self.encrypted_cols)
+        return self.rewriter.rewrite_query(query)
 
 
