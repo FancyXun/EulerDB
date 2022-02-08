@@ -182,6 +182,8 @@ class Rewriter(object):
             raise Exception("Bad create table query: {}".format(query))
         create_table = json['create table']
         table_name = create_table['name']
+        if table_name in self.db_meta.keys():
+            raise Exception("Table {} already exists".format(table_name))
         columns = create_table['columns']
         enc_columns = []
         columns_kv = {}
