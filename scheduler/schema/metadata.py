@@ -3,7 +3,7 @@ import os
 
 from scheduler.crypto import encrypt
 
-META_PATH = '../data/meta.json'
+META_PATH = 'data/meta.json'
 
 ENCRYPT_SQL_TYPE = {
     "INT":
