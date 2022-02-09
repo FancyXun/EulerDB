@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ## Start
 
 Before start, you must have a database created in mysql.
-the database info(include user and password) could be set in handler_test.py
+the database info(include user and password) could be set in [handler_test.py](https://github.com/FancyXun/EulerDB/blob/d0de441dc580af476be498e52c0aef5602198d0e/handler_test.py#L7)
 
 ### Start server
 ```shell script
