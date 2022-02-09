@@ -148,6 +148,14 @@ class TestPostHandler(TestCase):
         resp = requests.post('http://localhost:8888/query', json_data)
         print(resp.json()['result'])
 
+    def test_handler_alter_table(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'ALTER TABLE user ADD Birthday date'}
+        json_data = json.dumps(content)
+        requests.post('http://localhost:8888/query', json_data)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -54,7 +54,7 @@ SQL Type                    | Status                       | SQL Type           
 **SQL inner join**                 | TODO                         | **SQL fisrt**       | TODO 
 **SQL left join**                 | TODO                         | **SQL last**        | TODO 
 **SQL right join**                 | TODO                         | **SQL limit**       | ```DONE``` 
-**SQL full join**                 | TODO                         | **SQL alter**       | TODO 
+**SQL full join**                 | TODO                         | **SQL alter**       | ```DONE(not support)``` 
 **SQL union**                 | TODO                         | **SQL primary key** | TODO 
 **SQL create db**                 | TODO                         | **SQL foreign key** | TODO 
 **SQL create table**                 | ```DONE```                        | **SQL select into** | TODO 

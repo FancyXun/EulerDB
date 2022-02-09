@@ -4,6 +4,10 @@ from scheduler.backend.executors.abstract_executor import AbstractQueryExecutor
 from scheduler.compile.keywords_lists import QueryType
 from scheduler.schema.metadata import Delta
 
+SQL_TYPES = [
+    QueryType.CREATE, QueryType.SELECT, QueryType.INSERT
+]
+
 
 class RemoteExecutor(AbstractQueryExecutor):
     def __init__(self, conn):
@@ -19,8 +23,8 @@ class RemoteExecutor(AbstractQueryExecutor):
         """
         query_type = parser.query_type
         self.encrypted_cols = encrypted_cols
-        if query_type not in [QueryType.CREATE, QueryType.SELECT, QueryType.INSERT]:
-            raise NotImplementedError("{}".format(query_type))
+        if query_type not in SQL_TYPES:
+            raise NotImplementedError("Not support {} sql type".format(query_type))
         if self.encrypted_cols:
             if parser.query_type == QueryType.CREATE:
                 enc_query = self.dispatch(query)
