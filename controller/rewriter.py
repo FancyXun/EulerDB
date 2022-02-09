@@ -13,8 +13,7 @@ class ControllerDatabase(object):
                                              database=self.query_info['db'],
                                              password=self.query_info['password'])
         query = self.query_info['query']
+        encrypted_cols = None
         if "encrypt_cols" in self.query_info.keys():
-            result = execution_context.invoke(connection, query, self.query_info['encrypt_cols'])
-        else:
-            result = execution_context.invoke(connection, query)
-        return {'result': result}
+            encrypted_cols = self.query_info['encrypt_cols']
+        return {'result': execution_context.invoke(connection, query, encrypted_cols)}
