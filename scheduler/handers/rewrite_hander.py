@@ -147,7 +147,6 @@ class Rewriter(object):
                     self.select_state.append(cipher)
             return result
         if isinstance(json, list):
-
             return [self.rewrite_select_items(v['value'], table) for v in json]
         if isinstance(json, str):
             col = self.db_meta[table]['columns'][json]
