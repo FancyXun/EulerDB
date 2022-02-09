@@ -38,23 +38,23 @@ $ python handler_test.py
 
 SQL Type                    | Status                       | SQL Type            | Status                                                                                                                                           
 ----------------------------- |------------------------------|---------------------| --------------
-**SQL select**                 | <font color=blue>DONE</font> | **SQL unique**      | TODO 
+**SQL select**                 | ```DONE``` | **SQL unique**      | TODO 
 **SQL distinct**                 | TODO                         | **SQL drop**        | TODO 
-**SQL where**                 | <font color=blue>DONE</font>                         | **SQL avg**         | TODO 
-**SQL and & or**                | <font color=blue>DONE</font>                         | **SQL count**       | TODO 
-**SQL order by**               | <font color=blue>DONE</font>                         | **SQL max**         | <font color=blue>DONE</font> 
-**SQL insert**               | <font color=blue>DONE</font>                         | **SQL min**         | <font color=blue>DONE</font> 
+**SQL where**                 | ```DONE```                        | **SQL avg**         | TODO 
+**SQL and & or**                | ```DONE```                         | **SQL count**       | TODO 
+**SQL order by**               | ```DONE```                        | **SQL max**         | ```DONE```
+**SQL insert**               | ```DONE```                        | **SQL min**         | ```DONE``` 
 **SQL update**                 | TODO                         | **SQL sum**         | TODO 
 **SQL delete**                 | TODO                         | **SQL having**      | TODO 
 **SQL top**                 | TODO                         | **SQL group by**    | TODO 
-**SQL like**                 | <font color=blue>DONE</font>                         | **SQL round**       | TODO 
+**SQL like**                 | ```DONE```                        | **SQL round**       | TODO 
 **SQL in**                 | TODO                         | **SQL len**         | TODO 
 **SQL between**                 | TODO                         | **SQL select**      | TODO 
 **SQL join**                 | TODO                         | **SQL now**         | TODO 
 **SQL inner join**                 | TODO                         | **SQL fisrt**       | TODO 
 **SQL left join**                 | TODO                         | **SQL last**        | TODO 
-**SQL right join**                 | TODO                         | **SQL limit**       | <font color=blue>DONE</font> 
+**SQL right join**                 | TODO                         | **SQL limit**       | ```DONE``` 
 **SQL full join**                 | TODO                         | **SQL alter**       | TODO 
 **SQL union**                 | TODO                         | **SQL primary key** | TODO 
 **SQL create db**                 | TODO                         | **SQL foreign key** | TODO 
-**SQL create table**                 | <font color=blue>DONE</font>                         | **SQL select into** | TODO 
+**SQL create table**                 | ```DONE```                        | **SQL select into** | TODO 
