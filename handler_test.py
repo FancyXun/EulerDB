@@ -12,16 +12,6 @@ password = 'root'
 
 class TestPostHandler(TestCase):
 
-    def test_handler_query_limit(self):
-        content = {
-            'host': db_host, 'db': db,
-            'user': user, 'password': password,
-            'query': 'select * from user limit 5'}
-
-        json_data = json.dumps(content)
-        resp = requests.post('http://localhost:8888/query', json_data)
-        print(resp.json()['result'])
-
     def test_handler_create_table(self):
         create_table_sql = 'create table if not exists user(' \
                            'id_card varchar(40), name varchar(20), age int, sex varchar(5), ' \
@@ -46,6 +36,16 @@ class TestPostHandler(TestCase):
             'user': user, 'password': password,
             'query': create_table_sql,
             'encrypt_cols': encrypt_cols}
+
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
+    def test_handler_query_limit(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'select * from user limit 5'}
 
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
