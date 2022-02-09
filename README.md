@@ -1,5 +1,11 @@
 # EulerDB
 
+## ENV
+```shell script
+python 3.6
+mysql
+```
+
 ## Install
 
 ### Download repo
