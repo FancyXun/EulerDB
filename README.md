@@ -41,7 +41,7 @@ SQL Type                    | Status                       | SQL Type           
 **SQL select**                 | ```DONE``` | **SQL unique**      | TODO 
 **SQL distinct**                 | TODO                         | **SQL drop**        | TODO 
 **SQL where**                 | ```DONE```                        | **SQL avg**         | TODO 
-**SQL and & or**                | ```DONE```                         | **SQL count**       | TODO 
+**SQL and & or**                | ```DONE```                         | **SQL count**       | ```DONE``` 
 **SQL order by**               | ```DONE```                        | **SQL max**         | ```DONE```
 **SQL insert**               | ```DONE```                        | **SQL min**         | ```DONE``` 
 **SQL update**                 | TODO                         | **SQL sum**         | TODO 

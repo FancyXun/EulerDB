@@ -156,6 +156,15 @@ class TestPostHandler(TestCase):
         json_data = json.dumps(content)
         requests.post('http://localhost:8888/query', json_data)
 
+    def test_handler_alter_table(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'select count(*) from user'}
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
 
 if __name__ == "__main__":
     unittest.main()

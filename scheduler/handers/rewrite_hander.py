@@ -146,6 +146,9 @@ class Rewriter(object):
                     result.append(v['ENC_COLUMNS'][cipher])
                     self.select_state.append(cipher)
             return result
+        if json == {'count': '*'}:
+            self.select_state.append("PLAINTEXT")
+            return json
         if isinstance(json, list):
             return [self.rewrite_select_items(v['value'], table) for v in json]
         if isinstance(json, str):
