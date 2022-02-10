@@ -75,6 +75,11 @@ class Rewriter(object):
                     json['where'] = self.rewrite_where(json['where'], select_table)
                 if 'orderby' in json.keys():
                     json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
+        if 'delete' in json.keys():
+            delete_table = json['delete']
+            json['delete'] = self.db_meta[delete_table]['anonymous']
+            if 'where' in json.keys():
+                json['where'] = self.rewrite_where(json['where'], delete_table)
         return json
 
     @staticmethod

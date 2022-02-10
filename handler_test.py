@@ -68,6 +68,20 @@ class TestPostHandler(TestCase):
             json_data = json.dumps(content)
             requests.post('http://localhost:8888/query', json_data)
 
+    def test_insert_one_row(self):
+        # fixme
+        query = "insert user(id_card, name, age, sex, score, nick_name, comments) " \
+                "values (" \
+                "'496715970993917044442778', 'iezlcpnjws', 20, 'm', 92, " \
+                "'duriolzvwj', 'sswgyyydewbxsgzsduggstfhnrgsvj')"
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': query}
+
+        json_data = json.dumps(content)
+        requests.post('http://localhost:8888/query', json_data)
+
     def test_handler_query_where(self):
         content = {
             'host': db_host, 'db': db,
@@ -82,7 +96,7 @@ class TestPostHandler(TestCase):
         content = {
             'host': db_host, 'db': db,
             'user': user, 'password': password,
-            'query': 'select id_card, name from user where id_card = "496715970993917044442778" and name = "iezlcpnjws"'}
+            'query': 'select * from user where id_card = "496715970993917044442778" and name = "iezlcpnjws"'}
 
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
@@ -156,11 +170,20 @@ class TestPostHandler(TestCase):
         json_data = json.dumps(content)
         requests.post('http://localhost:8888/query', json_data)
 
-    def test_handler_alter_table(self):
+    def test_handler_count(self):
         content = {
             'host': db_host, 'db': db,
             'user': user, 'password': password,
             'query': 'select count(*) from user'}
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
+    def test_handler_delete_row(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'DELETE FROM user WHERE id_card = "496715970993917044442778" and name = "iezlcpnjws" '}
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
         print(resp.json()['result'])

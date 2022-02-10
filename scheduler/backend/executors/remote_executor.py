@@ -5,7 +5,7 @@ from scheduler.compile.keywords_lists import QueryType
 from scheduler.schema.metadata import Delta
 
 SQL_TYPES = [
-    QueryType.CREATE, QueryType.SELECT, QueryType.INSERT
+    QueryType.CREATE, QueryType.SELECT, QueryType.INSERT, QueryType.DELETE
 ]
 
 
@@ -43,7 +43,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                     cursor = self.conn.cursor()
                     cursor.execute(enc_query)
                     self.result = cursor.fetchall()
-            if parser.query_type == QueryType.INSERT:
+            else:
                 enc_query = self.dispatch(query)
                 if self.conn.is_connected():
                     cursor = self.conn.cursor()
