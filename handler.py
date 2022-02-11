@@ -19,6 +19,17 @@ logger = logging.getLogger(__name__)
 
 
 class BasePostRequestHandler(tornado.web.RequestHandler):
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
     executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
 
     @gen.coroutine
@@ -110,3 +121,52 @@ class RewriteHandler(BasePostRequestHandler, ABC):
         else:
             raise HTTPError(400, "Query argument cannot be empty string")
         return res
+
+
+class QueryHandler(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+        self.write('{"errorCode":"00","errorMessage","success"}')
+
+    @run_on_executor
+    def _post(self, *args, **kwargs):
+        query_para = json.loads(self.request.body)
+        query = query_para['sqlQuery']
+        while query[-1] == ";":
+            query = query[:-1]
+        kwargs = {
+            'host': '127.0.0.1',
+            'db': 'points',
+            'user': 'root',
+            'password': 'root',
+            'query': query
+        }
+        c_e = ControllerDatabase(kwargs)
+        res = c_e.do_query()
+        print(res)
+        return res
+
+    @gen.coroutine
+    def post(self, *args, **kwargs):
+        try:
+            result = yield self._post(*args, **kwargs)
+            self.write(result)
+        except HTTPError as e:
+            self.write(e)
+        except Exception as e:
+            logger.error(e)
+            raise HTTPError(404, "No results")
+
