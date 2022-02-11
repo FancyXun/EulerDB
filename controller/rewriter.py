@@ -17,3 +17,21 @@ class ControllerDatabase(object):
         if "encrypt_cols" in self.query_info.keys():
             encrypted_cols = self.query_info['encrypt_cols']
         return {'result': execution_context.invoke(connection, query, encrypted_cols)}
+
+
+class ControllerRewriter(object):
+
+    def __init__(self, data):
+        self.query_info = data
+
+    def do_rewrite(self):
+        query = self.query_info['query']
+        if isinstance(query, list):
+            query = query[0].decode("utf-8")
+        db = self.query_info['db']
+        if isinstance(db, list):
+            db = db[0].decode("utf-8")
+        encrypted_cols = None
+        if "encrypt_cols" in self.query_info.keys():
+            encrypted_cols = self.query_info['encrypt_cols']
+        return execution_context.rewrite(query, db, encrypted_cols)

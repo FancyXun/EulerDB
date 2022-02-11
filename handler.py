@@ -1,6 +1,6 @@
 from abc import ABC
 
-from controller.rewriter import ControllerDatabase
+from controller.rewriter import ControllerDatabase, ControllerRewriter
 
 import abc
 import json
@@ -73,6 +73,40 @@ class PostHandler(BasePostRequestHandler, ABC):
         if kwargs:
             c_e = ControllerDatabase(kwargs)
             res = c_e.do_query()
+        else:
+            raise HTTPError(400, "Query argument cannot be empty string")
+        return res
+
+
+class RewriteHandler(BasePostRequestHandler, ABC):
+
+    def _post_request_arguments(self, *args, **kwargs):
+
+        """
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
+        logger.info(self.__class__.__name__)
+        try:
+            data = json.loads(self.request.body)
+        except Exception as e:
+            data = self.request.arguments
+        if not data:
+            raise HTTPError(400, "Query argument cannot be empty string")
+        return data
+
+    def _request_service(self, **kwargs):
+
+        """
+        :param kwargs:
+        :return:
+        """
+
+        if kwargs:
+            c_e = ControllerRewriter(kwargs)
+            res = c_e.do_rewrite()
         else:
             raise HTTPError(400, "Query argument cannot be empty string")
         return res

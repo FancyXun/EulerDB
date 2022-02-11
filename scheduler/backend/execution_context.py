@@ -22,3 +22,8 @@ def invoke(conn, query, encrypted_cols=None):
     executor.call(query, Parser(query), encrypted_cols)
     return DecryptQueryExecutor(DecryptHandler).decrypt(executor)
 
+
+def rewrite(query, db, encrypted_cols=None):
+    return RemoteExecutor(None).dispatch(query, db, encrypted_cols)
+
+

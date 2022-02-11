@@ -27,7 +27,7 @@ class RemoteExecutor(AbstractQueryExecutor):
             raise NotImplementedError("Not support {} sql type".format(query_type))
         if self.encrypted_cols:
             if parser.query_type == QueryType.CREATE:
-                enc_query = self.dispatch(query)
+                enc_query = self.dispatch(query, self.conn.database, self.encrypted_cols)
                 if self.conn.is_connected():
                     try:
                         cursor = self.conn.cursor()
@@ -38,20 +38,20 @@ class RemoteExecutor(AbstractQueryExecutor):
                         # todo:delete tabel meta
         else:
             if parser.query_type == QueryType.SELECT:
-                enc_query = self.dispatch(query)
+                enc_query = self.dispatch(query, self.conn.database, self.encrypted_cols)
                 if self.conn.is_connected():
                     cursor = self.conn.cursor()
                     cursor.execute(enc_query)
                     self.result = cursor.fetchall()
             else:
-                enc_query = self.dispatch(query)
+                enc_query = self.dispatch(query, self.conn.database, self.encrypted_cols)
                 if self.conn.is_connected():
                     cursor = self.conn.cursor()
                     cursor.execute(enc_query)
                     self.conn.commit()
 
-    def dispatch(self, query):
-        self.rewriter = Rewriter(self.conn.database, self.encrypted_cols)
+    def dispatch(self, query, db, enc_cols):
+        self.rewriter = Rewriter(db, enc_cols)
         return self.rewriter.rewrite_query(query)
 
 

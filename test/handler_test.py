@@ -189,5 +189,17 @@ class TestPostHandler(TestCase):
         print(resp.json()['result'])
 
 
+class TestRewriterHandler(TestCase):
+
+    def test_select_rewrite(self):
+        content = {
+            'query': 'select id_card, name, age from user where age = 20 limit 5',
+            'db': db
+        }
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/rewrite_query', json_data)
+        print(resp.text)
+
+
 if __name__ == "__main__":
     unittest.main()
