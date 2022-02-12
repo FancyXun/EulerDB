@@ -32,6 +32,9 @@ $ python service.py
 $ python handler_test.py
 ```
 
+## Sql-editor
+[Poli](https://github.com/FancyXun/poli)
+
 ## Development 
 
 ### TODO LIST
