@@ -4,7 +4,7 @@ from scheduler.compile.parser import Parser
 from scheduler.handers.decrypt_handler import DecryptHandler
 
 
-def invoke(conn, query, encrypted_cols=None):
+def invoke(conn, query, encrypted_cols=None, columns_info=False):
     """
     At present, we temporarily use parser class to determine SQL type.
     But in fact
@@ -20,7 +20,10 @@ def invoke(conn, query, encrypted_cols=None):
     """
     executor = RemoteExecutor(conn)
     executor.call(query, Parser(query), encrypted_cols)
-    return DecryptQueryExecutor(DecryptHandler).decrypt(executor)
+    if not columns_info:
+        return DecryptQueryExecutor(DecryptHandler).decrypt(executor)
+
+    return [DecryptQueryExecutor(DecryptHandler).decrypt(executor), executor.get_sql_columns()]
 
 
 def rewrite(query, db, encrypted_cols=None):

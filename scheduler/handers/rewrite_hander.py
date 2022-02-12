@@ -1,5 +1,6 @@
 import time
 import hashlib
+import collections
 
 from sql_parsing import parse_mysql as parse
 from sql_parsing import format
@@ -19,6 +20,7 @@ class Rewriter(object):
         if db in Delta().meta.keys():
             self.db_meta = Delta().meta[db]
         self.select_state = []
+        self.select_columns = collections.OrderedDict()
 
     def rewrite_query(self, query):
         """
@@ -150,14 +152,17 @@ class Rewriter(object):
                 else:
                     result.append(v['ENC_COLUMNS'][cipher])
                     self.select_state.append(cipher)
+                self.select_columns[k] = v['TYPE']
             return result
         if json == {'count': '*'}:
             self.select_state.append("PLAINTEXT")
+            self.select_columns["count"] = "INT"
             return json
         if isinstance(json, list):
             return [self.rewrite_select_items(v['value'], table) for v in json]
         if isinstance(json, str):
             col = self.db_meta[table]['columns'][json]
+            self.select_columns[json] = col['TYPE']
             if col['PLAINTEXT']:
                 self.select_state.append("PLAINTEXT")
                 return json
@@ -207,11 +212,13 @@ class Rewriter(object):
                         enc_col_type = t_k
                     enc_columns.append(col_name + ' ' + enc_col_type)
                     columns_kv[col_name]['PLAINTEXT'] = True
+                    columns_kv[col_name]['TYPE'] = t_k
                 continue
             val = ENCRYPT_SQL_TYPE.get(list(col['type'].keys())[0].upper())
             for k, v in val.items():
                 enc_col_name = col_name.upper() + k
                 for t_k, t_v in col_type.items():
+                    columns_kv[col_name]['TYPE'] = t_k
                     if t_v:
                         enc_col_type = t_k + '(' + str(t_v * v) + ')'
                     else:

@@ -16,7 +16,9 @@ class ControllerDatabase(object):
         encrypted_cols = None
         if "encrypt_cols" in self.query_info.keys():
             encrypted_cols = self.query_info['encrypt_cols']
-        return {'result': execution_context.invoke(connection, query, encrypted_cols)}
+        result = execution_context.invoke(connection, query, encrypted_cols, columns_info=True)
+        return {'result': result[0],
+                'columns': result[1]}
 
 
 class ControllerRewriter(object):

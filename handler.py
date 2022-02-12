@@ -156,8 +156,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
         }
         c_e = ControllerDatabase(kwargs)
         res = c_e.do_query()
-        print(res)
-        return res
+        return self.format_result(res)
 
     @gen.coroutine
     def post(self, *args, **kwargs):
@@ -170,3 +169,33 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             logger.error(e)
             raise HTTPError(404, "No results")
 
+    @staticmethod
+    def format_result(res):
+        columns = res['columns']
+        format_res = {'columns': [],
+                      "data": [],
+                      "error": None}
+        order_columns = []
+        for k, v in columns.items():
+            if v == 'varchar':
+                format_res['columns'].append({"name": k,
+                                              "javaType": "VARCHAR",
+                                              "dbType": "VARCHAR",
+                                              "length": 100
+                                              })
+            elif v == 'int':
+                format_res['columns'].append({"name": k,
+                                              "javaType": "INTEGER",
+                                              "dbType": "INT",
+                                              "length": 10
+                                              })
+            order_columns.append(k)
+        result = res["result"]
+        data = []
+        for row in result:
+            format_row = {}
+            for k, v in zip(order_columns, row):
+                format_row[k] = v
+            data.append(json.dumps(format_row))
+        format_res["data"] = "[" + ",".join(data) + "]"
+        return format_res
