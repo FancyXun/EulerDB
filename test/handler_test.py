@@ -112,6 +112,26 @@ class TestPostHandler(TestCase):
         resp = requests.post('http://localhost:8888/query', json_data)
         print(resp.json()['result'])
 
+    def test_handler_query_distinct(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'select distinct id_card, name, age from user limit 5'}
+
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
+    def test_handler_query_distinct1(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'select distinct age, name, id_card from user limit 1000'}
+
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
     def test_handler_query_max(self):
         content = {
             'host': db_host, 'db': db,

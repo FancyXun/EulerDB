@@ -11,6 +11,8 @@ from scheduler.schema.metadata import \
     ENCRYPT_SQL_TYPE, \
     FUZZY_TYPE
 
+from scheduler.utils.keywords import SELECT_STATEMENTS
+
 
 class Rewriter(object):
     def __init__(self, db, encrypted_cols=None):
@@ -68,15 +70,16 @@ class Rewriter(object):
                             for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].keys():
                                 new_values.append(self.encrypt_value(value['value'], enc))
                     json['query']['select'] = new_values
-        if 'select' in json.keys():
-            if 'from' in json.keys():
-                select_table = json['from']
-                json['select'] = self.rewrite_select_items(json['select'], select_table)
-                json['from'] = self.db_meta[select_table]['anonymous']
-                if 'where' in json.keys():
-                    json['where'] = self.rewrite_where(json['where'], select_table)
-                if 'orderby' in json.keys():
-                    json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
+        for keyword in SELECT_STATEMENTS:
+            if keyword in json.keys():
+                if 'from' in json.keys():
+                    select_table = json['from']
+                    json[keyword] = self.rewrite_select_items(json[keyword], select_table)
+                    json['from'] = self.db_meta[select_table]['anonymous']
+                    if 'where' in json.keys():
+                        json['where'] = self.rewrite_where(json['where'], select_table)
+                    if 'orderby' in json.keys():
+                        json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
         if 'delete' in json.keys():
             delete_table = json['delete']
             json['delete'] = self.db_meta[delete_table]['anonymous']
