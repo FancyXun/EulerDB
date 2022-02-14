@@ -7,3 +7,5 @@
 #
 
 SELECT_STATEMENTS = ['select', 'select_distinct']
+
+MODIFY_STATEMENTS = ['update', 'delete']

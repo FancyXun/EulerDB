@@ -11,7 +11,7 @@ from scheduler.schema.metadata import \
     ENCRYPT_SQL_TYPE, \
     FUZZY_TYPE
 
-from scheduler.utils.keywords import SELECT_STATEMENTS
+from scheduler.utils.keywords import SELECT_STATEMENTS, MODIFY_STATEMENTS
 
 
 class Rewriter(object):
@@ -80,11 +80,14 @@ class Rewriter(object):
                         json['where'] = self.rewrite_where(json['where'], select_table)
                     if 'orderby' in json.keys():
                         json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
-        if 'delete' in json.keys():
-            delete_table = json['delete']
-            json['delete'] = self.db_meta[delete_table]['anonymous']
-            if 'where' in json.keys():
-                json['where'] = self.rewrite_where(json['where'], delete_table)
+        for keyword in MODIFY_STATEMENTS:
+            if keyword in json.keys():
+                modify_table = json[keyword]
+                json[keyword] = self.db_meta[modify_table]['anonymous']
+                if 'where' in json.keys():
+                    json['where'] = self.rewrite_where(json['where'], modify_table)
+                if 'set' in json.keys():
+                    json['set'] = self.rewrite_set(json['set'], modify_table)
         return json
 
     @staticmethod
@@ -144,6 +147,17 @@ class Rewriter(object):
                 return "%".join(result)
             return CIPHERS_META[cipher].encrypt(json)
         return json
+
+    def rewrite_set(self, json, table):
+        result = {}
+        enc_table_meta = self.db_meta[table]
+        for k, v in json.items():
+            if enc_table_meta['columns'][k]['PLAINTEXT']:
+                result[k] = v
+            else:
+                for k1, v1 in enc_table_meta['columns'][k]['ENC_COLUMNS'].items():
+                    result[v1] = self.rewrite_where(v, table, k1)
+        return result
 
     def rewrite_select_items(self, json, table, cipher='SYMMETRIC'):
         if json == "*":

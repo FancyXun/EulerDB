@@ -42,13 +42,13 @@ $ python handler_test.py
 SQL Type                    | Status | SQL Type            | Status                                                                                                                                           
 ----------------------------- |--------|---------------------| --------------
 **SQL select**                 | ```DONE``` | **SQL unique**      | TODO 
-**SQL distinct**                 | ```DONE```   | **SQL drop**        | TODO 
+**SQL distinct**                 | ```DONE``` | **SQL drop**        | TODO 
 **SQL where**                 | ```DONE``` | **SQL avg**         | TODO 
 **SQL and & or**                | ```DONE``` | **SQL count**       | ```DONE``` 
 **SQL order by**               | ```DONE``` | **SQL max**         | ```DONE```
 **SQL insert**               | ```DONE``` | **SQL min**         | ```DONE``` 
-**SQL update**                 | TODO   | **SQL sum**         | TODO 
-**SQL delete**                 | ```DONE```      | **SQL having**      | TODO 
+**SQL update**                 | ```DONE``` | **SQL sum**         | TODO 
+**SQL delete**                 | ```DONE``` | **SQL having**      | TODO 
 **SQL top**                 | TODO   | **SQL group by**    | TODO 
 **SQL like**                 | ```DONE``` | **SQL round**       | TODO 
 **SQL in**                 | TODO   | **SQL len**         | TODO 
@@ -59,5 +59,5 @@ SQL Type                    | Status | SQL Type            | Status
 **SQL right join**                 | TODO   | **SQL limit**       | ```DONE``` 
 **SQL full join**                 | TODO   | **SQL alter**       | ```DONE(not support)``` 
 **SQL union**                 | TODO   | **SQL primary key** | TODO 
-**SQL create db**                 | TODO   | **SQL foreign key** | TODO 
+**SQL create db**                 | TODO(unnecessary) | **SQL foreign key** | TODO 
 **SQL create table**                 | ```DONE``` | **SQL select into** | TODO 

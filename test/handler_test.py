@@ -208,6 +208,26 @@ class TestPostHandler(TestCase):
         resp = requests.post('http://localhost:8888/query', json_data)
         print(resp.json()['result'])
 
+    def test_handler_update(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'UPDATE user set id_card = "496715970993917044442778" , name = "iezlcpnjws" '
+                     'WHERE age = 30 '}
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
+    def test_handler_after_update_select(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password,
+            'query': 'select id_card, name from user '
+                     'WHERE age = 30 limit 100'}
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
 
 class TestRewriterHandler(TestCase):
 

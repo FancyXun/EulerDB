@@ -5,7 +5,7 @@ from scheduler.compile.keywords_lists import QueryType
 from scheduler.schema.metadata import Delta
 
 SQL_TYPES = [
-    QueryType.CREATE, QueryType.SELECT, QueryType.INSERT, QueryType.DELETE
+    QueryType.CREATE, QueryType.SELECT, QueryType.INSERT, QueryType.DELETE, QueryType.UPDATE
 ]
 
 

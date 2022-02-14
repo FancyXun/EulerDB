@@ -112,6 +112,8 @@ unordered_clauses = [
     "select_distinct",
     "select",
     "delete",
+    "update",
+    "set",
     "from",
     "where",
     "groupby",
@@ -507,6 +509,14 @@ class Formatter:
     def delete(self, json, prec):
         param = "FROM " + json['delete']
         return f"DELETE {param}"
+
+    def update(self, json, prec):
+        param = json['update']
+        return f"UPDATE {param}"
+
+    def set(self, json, prec):
+        param = ", ".join([" = ".join([self.dispatch(k), self.dispatch(v)]) for k, v in json["set"].items()])
+        return f"SET {param}"
 
     def distinct_on(self, json, prec):
         param = ", ".join(self.dispatch(s) for s in listwrap(json["distinct_on"]))
