@@ -1,4 +1,6 @@
 import logging
+import yaml
+
 import tornado.web
 from tornado.web import URLSpec
 from tornado.ioloop import IOLoop
@@ -10,6 +12,7 @@ from handler import QueryHandler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
 
 HANDLERS = [
     URLSpec(r'/query', PostHandler,
