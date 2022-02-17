@@ -18,7 +18,7 @@ class RemoteExecutor(AbstractQueryExecutor):
     def __init__(self, conn_info):
         super().__init__(handler=None)
         self.conn_info = conn_info
-        self.conn = self.__connect_db(conn_info)
+        self.conn = self.__connect_db_pool(conn_info)
         self.result = None
         self.encrypted_cols = None
         self.rewriter = None
@@ -50,6 +50,14 @@ class RemoteExecutor(AbstractQueryExecutor):
                                        database=conn_info['db'],
                                        password=conn_info['password'],
                                        port=conn_info['port'])
+
+    @staticmethod
+    def __connect_db_pool(conn_info):
+        connection = PooledDB(
+            mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
+            passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
+
+        return connection.connection()
 
     def call(self, query, parser, encrypted_cols):
         """
