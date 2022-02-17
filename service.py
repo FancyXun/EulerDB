@@ -19,7 +19,7 @@ HANDLERS = [
             name=PostHandler.__name__),
     URLSpec(r'/rewrite_query', RewriteHandler,
             name=RewriteHandler.__name__),
-    URLSpec(r'/vue_query', QueryHandler,
+    URLSpec(r'/js_query', QueryHandler,
             name=QueryHandler.__name__)
 ]
 

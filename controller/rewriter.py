@@ -14,11 +14,23 @@ class ControllerDatabase(object):
                                              password=self.query_info['password'])
         query = self.query_info['query']
         encrypted_cols = None
-        if "encrypt_cols" in self.query_info.keys():
-            encrypted_cols = self.query_info['encrypt_cols']
+        if "encrypted_columns" in self.query_info.keys():
+            encrypted_cols = self.query_info['encrypted_columns']
         result = execution_context.invoke(connection, query, encrypted_cols, columns_info=True)
-        return {'result': result[0],
-                'columns': result[1]}
+        if result[0]:
+            return {'result': result[0],
+                    'columns': result[1]}
+        else:
+            return {'result': []}
+
+    def do_create(self):
+        connection = mysql.connector.connect(host=self.query_info['host'],
+                                             user=self.query_info['user'],
+                                             database=self.query_info['db'],
+                                             password=self.query_info['password'])
+        query = self.query_info['query']
+        encrypted_cols = self.query_info['encrypted_columns']
+        execution_context.invoke(connection, query, encrypted_cols, columns_info=True)
 
 
 class ControllerRewriter(object):

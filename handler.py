@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from controller.rewriter import ControllerDatabase, ControllerRewriter
 
-
 NUMBER_OF_EXECUTOR = 6
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -152,13 +151,20 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
     @run_on_executor
     def _post(self, *args, **kwargs):
         query_para = json.loads(self.request.body)
-        query = query_para['sqlQuery']
-        while query[-1] == ";":
-            query = query[:-1]
+        encrypted_columns = {}
+        if "create_table" in query_para.keys():
+            query = query_para['create_table']
+            data_source_id = query_para['selectedJdbcDataSource']['value']
+            encrypted_columns = query_para['encrypted_columns']
+        else:
+            query = query_para['sqlQuery']
+            while query[-1] == ";":
+                query = query[:-1]
+            data_source_id = query_para["jdbcDataSourceId"]
         cx = sqlite3.connect(config['meta']['db'])
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
-                   "username, password, ping FROM p_datasource WHERE id={}".format(query_para["jdbcDataSourceId"]))
+                   "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
         db_info = cu.fetchall()
         jdbc = db_info[0][2]
         if jdbc[:13] == "jdbc:mysql://":
@@ -173,11 +179,15 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'db': db,
                 'user': user,
                 'password': password,
-                'query': query
+                'query': query,
+                'encrypted_columns': encrypted_columns
             }
             c_e = ControllerDatabase(kwargs)
-            res = c_e.do_query()
-            return self.format_result(res)
+            if "create_table" not in query_para.keys():
+                res = c_e.do_query()
+                return self.format_result(res)
+            else:
+                c_e.do_create()
         else:
             return {}
 
@@ -194,6 +204,8 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
 
     @staticmethod
     def format_result(res):
+        if not res['result']:
+            return {}
         columns = res['columns']
         format_res = {'columns': [],
                       "data": [],
