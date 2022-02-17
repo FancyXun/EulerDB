@@ -29,14 +29,19 @@ class RemoteExecutor(AbstractQueryExecutor):
             return conn_info
         db_key = conn_info['host'] + str(conn_info['port']) + conn_info['db'] + conn_info['user']
         if db_key not in connection_pool:
-            connection = PooledDB(
-                mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
-                passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
+            # connection = PooledDB(
+            #     mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
+            #     passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
+            connection = mysql.connector.connect(host=conn_info['host'],
+                                                 user=conn_info['user'],
+                                                 database=conn_info['db'],
+                                                 password=conn_info['password'],
+                                                 port=conn_info['port'])
             connection_pool[db_key] = connection
             print("mysql connected from {}" .format(db_key))
         else:
             connection = connection_pool[db_key]
-        return connection.connection()
+        return connection
 
     def call(self, query, parser, encrypted_cols):
         """
