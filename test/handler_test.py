@@ -14,11 +14,11 @@ port = 3306
 class TestPostHandler(TestCase):
 
     def test_handler_create_table(self):
-        create_table_sql = 'create table if not exists user(' \
+        create_table_sql = 'create table if not exists user1(' \
                            'id_card varchar(40), name varchar(20), age int, sex varchar(5), ' \
                            'score int, nick_name varchar(20), comments varchar(200));'
 
-        encrypt_cols = {
+        encrypted_columns = {
             "id_card": {
                 "fuzzy": True,
                 "arithmetic": False,
@@ -37,7 +37,7 @@ class TestPostHandler(TestCase):
             'user': user, 'password': password,
             'port': port,
             'query': create_table_sql,
-            'encrypt_cols': encrypt_cols}
+            'encrypted_columns': encrypted_columns}
 
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
