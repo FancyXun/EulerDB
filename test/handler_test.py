@@ -106,11 +106,31 @@ class TestPostHandler(TestCase):
         resp = requests.post('http://localhost:8888/query', json_data)
         print(resp.json()['result'])
 
+    def test_handler_query_greater_equal(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password, 'port': port,
+            'query': 'select id_card, name, age from user where age >= 40 limit 100'}
+
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
     def test_handler_query_less(self):
         content = {
             'host': db_host, 'db': db,
             'user': user, 'password': password, 'port': port,
             'query': 'select id_card, name, age from user where age < 10 limit 100'}
+
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+        print(resp.json()['result'])
+
+    def test_handler_query_less_equal(self):
+        content = {
+            'host': db_host, 'db': db,
+            'user': user, 'password': password, 'port': port,
+            'query': 'select id_card, name, age from user where age <= 10 limit 100'}
 
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
