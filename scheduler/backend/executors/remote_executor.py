@@ -54,7 +54,7 @@ class RemoteExecutor(AbstractQueryExecutor):
     @staticmethod
     def __connect_db_pool(conn_info):
         connection = PooledDB(
-            mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
+            mysql.connector, 10, host=conn_info['host'], user=conn_info['user'],
             passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
 
         return connection.connection()
