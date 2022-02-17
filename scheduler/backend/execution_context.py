@@ -4,7 +4,7 @@ from scheduler.compile.parser import Parser
 from scheduler.handers.decrypt_handler import DecryptHandler
 
 
-def invoke(conn, query, encrypted_cols=None, columns_info=False):
+def invoke(conn_info, query, encrypted_cols=None, columns_info=False):
     """
     At present, we temporarily use parser class to determine SQL type.
     But in fact
@@ -18,7 +18,7 @@ def invoke(conn, query, encrypted_cols=None, columns_info=False):
     Of course, the returned results may also include plaintext results, so we need to keep these results
     without doing anything
     """
-    executor = RemoteExecutor(conn)
+    executor = RemoteExecutor(conn_info)
     executor.call(query, Parser(query), encrypted_cols)
     if not columns_info:
         return DecryptQueryExecutor(DecryptHandler).decrypt(executor)

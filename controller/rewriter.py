@@ -1,4 +1,3 @@
-import mysql.connector
 from scheduler.backend import execution_context
 
 
@@ -8,15 +7,10 @@ class ControllerDatabase(object):
         self.query_info = data
 
     def do_query(self):
-        connection = mysql.connector.connect(host=self.query_info['host'],
-                                             user=self.query_info['user'],
-                                             database=self.query_info['db'],
-                                             password=self.query_info['password'])
-        query = self.query_info['query']
         encrypted_cols = None
         if "encrypted_columns" in self.query_info.keys():
             encrypted_cols = self.query_info['encrypted_columns']
-        result = execution_context.invoke(connection, query, encrypted_cols, columns_info=True)
+        result = execution_context.invoke(self.query_info, self.query_info['query'], encrypted_cols, columns_info=True)
         if result[0]:
             return {'result': result[0],
                     'columns': result[1]}
@@ -24,13 +18,9 @@ class ControllerDatabase(object):
             return {'result': []}
 
     def do_create(self):
-        connection = mysql.connector.connect(host=self.query_info['host'],
-                                             user=self.query_info['user'],
-                                             database=self.query_info['db'],
-                                             password=self.query_info['password'])
         query = self.query_info['query']
         encrypted_cols = self.query_info['encrypted_columns']
-        execution_context.invoke(connection, query, encrypted_cols, columns_info=True)
+        execution_context.invoke(self.query_info, query, encrypted_cols, columns_info=True)
 
 
 class ControllerRewriter(object):

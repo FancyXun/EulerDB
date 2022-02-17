@@ -180,6 +180,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'user': user,
                 'password': password,
                 'query': query,
+                'port': int(port),
                 'encrypted_columns': encrypted_columns
             }
             c_e = ControllerDatabase(kwargs)

@@ -8,6 +8,7 @@ db_host = '127.0.0.1'
 db = 'points'
 user = 'root'
 password = 'root'
+port = 3306
 
 
 class TestPostHandler(TestCase):
@@ -34,6 +35,7 @@ class TestPostHandler(TestCase):
         content = {
             'host': db_host, 'db': db,
             'user': user, 'password': password,
+            'port': port,
             'query': create_table_sql,
             'encrypt_cols': encrypt_cols}
 
@@ -45,6 +47,7 @@ class TestPostHandler(TestCase):
         content = {
             'host': db_host, 'db': db,
             'user': user, 'password': password,
+            'port': port,
             'query': 'select * from user limit 5'}
 
         json_data = json.dumps(content)
@@ -63,6 +66,7 @@ class TestPostHandler(TestCase):
             content = {
                 'host': db_host, 'db': db,
                 'user': user, 'password': password,
+                'port': port,
                 'query': query}
 
             json_data = json.dumps(content)
@@ -76,7 +80,7 @@ class TestPostHandler(TestCase):
                 "'duriolzvwj', 'sswgyyydewbxsgzsduggstfhnrgsvj')"
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': query}
 
         json_data = json.dumps(content)
@@ -85,7 +89,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_where(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select id_card, name, age from user where age = 20 limit 5'}
 
         json_data = json.dumps(content)
@@ -95,7 +99,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_where_and(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select * from user where id_card = "496715970993917044442778" and name = "iezlcpnjws"'}
 
         json_data = json.dumps(content)
@@ -105,7 +109,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_order_by(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select id_card, name, age from user order by age limit 5'}
 
         json_data = json.dumps(content)
@@ -115,7 +119,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_distinct(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select distinct id_card, name, age from user limit 5'}
 
         json_data = json.dumps(content)
@@ -125,7 +129,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_distinct1(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select distinct age, name, id_card from user limit 1000'}
 
         json_data = json.dumps(content)
@@ -135,7 +139,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_max(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select max(age) from user'}
 
         json_data = json.dumps(content)
@@ -145,7 +149,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_min(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select min(age) from user'}
 
         json_data = json.dumps(content)
@@ -155,7 +159,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_like(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select id_card, name from user where name like "rax%fpb%" limit 5'}
 
         json_data = json.dumps(content)
@@ -165,7 +169,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_max1(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select max(score) from user '}
 
         json_data = json.dumps(content)
@@ -175,7 +179,7 @@ class TestPostHandler(TestCase):
     def test_handler_query_min1(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select min(score) from user'}
 
         json_data = json.dumps(content)
@@ -185,7 +189,7 @@ class TestPostHandler(TestCase):
     def test_handler_alter_table(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'ALTER TABLE user ADD Birthday date'}
         json_data = json.dumps(content)
         requests.post('http://localhost:8888/query', json_data)
@@ -193,7 +197,7 @@ class TestPostHandler(TestCase):
     def test_handler_count(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select count(*) from user'}
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
@@ -202,7 +206,7 @@ class TestPostHandler(TestCase):
     def test_handler_delete_row(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'DELETE FROM user WHERE id_card = "496715970993917044442778" and name = "iezlcpnjws" '}
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
@@ -211,7 +215,7 @@ class TestPostHandler(TestCase):
     def test_handler_update(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'UPDATE user set id_card = "496715970993917044442778" , name = "iezlcpnjws" '
                      'WHERE age = 30 '}
         json_data = json.dumps(content)
@@ -221,7 +225,7 @@ class TestPostHandler(TestCase):
     def test_handler_after_update_select(self):
         content = {
             'host': db_host, 'db': db,
-            'user': user, 'password': password,
+            'user': user, 'password': password, 'port': port,
             'query': 'select id_card, name from user '
                      'WHERE age = 30 limit 100'}
         json_data = json.dumps(content)
