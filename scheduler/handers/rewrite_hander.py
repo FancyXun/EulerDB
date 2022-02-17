@@ -112,6 +112,11 @@ class Rewriter(object):
                     if not columns_meta[v[0]]['PLAINTEXT']:
                         return {'eq': [columns_meta[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
                                        self.rewrite_where(v[1], table)]}
+                if k in ['gt', 'lt']:
+                    if not columns_meta[v[0]]['PLAINTEXT']:
+                        if columns_meta[v[0]]['TYPE'] == 'int':
+                            return {k: [columns_meta[v[0]]['ENC_COLUMNS']["OPE"],
+                                           self.rewrite_where(v[1], table, 'OPE')]}
                 if k == 'like':
                     if not columns_meta[v[0]]['PLAINTEXT']:
                         return {

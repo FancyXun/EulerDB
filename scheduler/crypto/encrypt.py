@@ -200,10 +200,10 @@ class OPECipher:
         self.cipher = OPE(b'ZvtU2iyA0E5byRp6YMxbsoEnk1vKPxtm6IcLt4ZxuK0=')
 
     def encrypt(self, raw):
-        return self.cipher.encrypt(raw)
+        return self.cipher.encrypt(int(raw))
 
     def decrypt(self, enc):
-        return self.cipher.decrypt(enc)
+        return self.cipher.decrypt(int(enc))
 
 
 class FuzzyCipher:
