@@ -235,3 +235,100 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             data.append(json.dumps(format_row))
         format_res["data"] = "[" + ",".join(data) + "]"
         return format_res
+
+
+class QueryComponentHandler(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+    ENCRYPT_KEY = "1234salt1234salt"
+    ENCRYPT_IV = "5678salt5678salt"
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    def options(self, component_id=None):
+        self.set_status(204)
+        self.finish()
+        self.write('{"errorCode":"00","errorMessage","success"}')
+
+    @run_on_executor
+    def _post(self, component_id=None):
+        query_para = json.loads(self.request.body)
+        cx = sqlite3.connect(config['meta']['db'])
+        cu = cx.cursor()
+        cu.execute("SELECT id, name, connection_url, driver_class_name, "
+                   "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
+        db_info = cu.fetchall()
+        jdbc = db_info[0][2]
+        if jdbc[:13] == "jdbc:mysql://":
+            host_port = jdbc[13:].split("/")[0]
+            host = host_port.split(":")[0]
+            port = host_port.split(":")[1]
+            db = jdbc[13:].split("/")[1]
+            user = db_info[0][4]
+            password = db_info[0][5]
+            kwargs = {
+                'host': host,
+                'db': db,
+                'user': user,
+                'password': password,
+                'port': int(port),
+            }
+            c_e = ControllerDatabase(kwargs)
+            if "create_table" not in query_para.keys():
+                res = c_e.do_query()
+                return self.format_result(res)
+            else:
+                c_e.do_create()
+        else:
+            return {}
+
+    @gen.coroutine
+    def post(self, component_id=None):
+        try:
+            result = yield self._post(component_id)
+            self.write(result)
+        except HTTPError as e:
+            self.write(e)
+        except Exception as e:
+            logger.error(e)
+            raise HTTPError(404, "No results")
+
+    @staticmethod
+    def format_result(res):
+        if not res['result']:
+            return {}
+        columns = res['columns']
+        format_res = {'columns': [],
+                      "data": [],
+                      "error": None}
+        order_columns = []
+        for k, v in columns.items():
+            if v == 'varchar':
+                format_res['columns'].append({"name": k,
+                                              "javaType": "VARCHAR",
+                                              "dbType": "VARCHAR",
+                                              "length": 100
+                                              })
+            elif v == 'int':
+                format_res['columns'].append({"name": k,
+                                              "javaType": "INTEGER",
+                                              "dbType": "INT",
+                                              "length": 10
+                                              })
+            order_columns.append(k)
+        result = res["result"]
+        data = []
+        for row in result:
+            format_row = {}
+            for k, v in zip(order_columns, row):
+                format_row[k] = v
+            data.append(json.dumps(format_row))
+        format_res["data"] = "[" + ",".join(data) + "]"
+        return format_res

@@ -6,9 +6,7 @@ from tornado.web import URLSpec
 from tornado.ioloop import IOLoop
 
 
-from handler import PostHandler
-from handler import RewriteHandler
-from handler import QueryHandler
+from handler import PostHandler, RewriteHandler, QueryHandler, QueryComponentHandler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -19,7 +17,9 @@ HANDLERS = [
             name=PostHandler.__name__),
     URLSpec(r'/rewrite_query', RewriteHandler,
             name=RewriteHandler.__name__),
-    URLSpec(r'/js_query', QueryHandler,
+    URLSpec(r'/jdbc_query', QueryHandler,
+            name=QueryHandler.__name__),
+    URLSpec(r'/jdbc_query/component/?([?P<component_id>\w])?', QueryComponentHandler,
             name=QueryHandler.__name__)
 ]
 
