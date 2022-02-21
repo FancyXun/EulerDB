@@ -43,11 +43,11 @@ SQL Type                    | Status     | SQL Type            | Status
 ----------------------------- |------------|---------------------| --------------
 **SQL select**                 | ```DONE``` | **SQL unique**      | TODO(low) 
 **SQL distinct**                 | ```DONE``` | **SQL drop**        | TODO 
-**SQL where**                 | ```DONE``` | **SQL avg**         | TODO 
+**SQL where**                 | ```DONE``` | **SQL avg**         | ```DONE``` 
 **SQL and & or**                | ```DONE``` | **SQL count**       | ```DONE``` 
 **SQL order by**               | ```DONE``` | **SQL max**         | ```DONE```
 **SQL insert**               | ```DONE``` | **SQL min**         | ```DONE``` 
-**SQL update**                 | ```DONE``` | **SQL sum**         | TODO 
+**SQL update**                 | ```DONE``` | **SQL sum**         | ```DONE``` 
 **SQL delete**                 | ```DONE``` | **SQL having**      | TODO 
 **SQL top(SQL Server)**                  | TODO(low)  | **SQL group by**    | TODO 
 **SQL like**                 | ```DONE``` | **SQL round**       | TODO 
