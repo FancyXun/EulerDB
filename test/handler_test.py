@@ -36,7 +36,9 @@ sql_list = {
          'select distinct age, name, id_card from {} limit 1000'.format(table),
          'select max(age), min(age) from {}'.format(table),
          'select id_card, name from {} WHERE age = 30 limit 100'.format(table),
-         'select max(score), min(score) from {} '.format(table)
+         'select max(score), min(score) from {} '.format(table),
+         'select sum(score), avg(score) from {} '.format(table),
+         'select sum(age), avg(age) from {} '.format(table)
          ],
     'like':
         ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table)],
@@ -70,7 +72,7 @@ class TestPostHandler(TestCase):
             },
             "age": {
                 "fuzzy": False,
-                "arithmetic": False
+                "arithmetic": True
             }
         }
         content['query'] = create_table_sql
