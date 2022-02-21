@@ -194,7 +194,7 @@ class FernetCipher:
 
 class OPECipher:
     input = 'INT'
-    output = 'INT'
+    output = 'BIGINT'
 
     def __init__(self):
         self.cipher = OPE(b'ZvtU2iyA0E5byRp6YMxbsoEnk1vKPxtm6IcLt4ZxuK0=')

@@ -20,6 +20,7 @@ class ControllerDatabase(object):
     def do_create(self):
         query = self.query_info['query']
         encrypted_cols = self.query_info['encrypted_columns']
+        encrypted_cols = eval(encrypted_cols) if isinstance(encrypted_cols, str) else encrypted_cols
         execution_context.invoke(self.query_info, query, encrypted_cols, columns_info=True)
 
 

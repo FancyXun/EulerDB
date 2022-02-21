@@ -189,6 +189,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 return self.format_result(res)
             else:
                 c_e.do_create()
+                return {}
         else:
             return {}
 

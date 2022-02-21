@@ -14,7 +14,7 @@ port = 3306
 class TestPostHandler(TestCase):
 
     def test_handler_create_table(self):
-        create_table_sql = 'create table if not exists user1(' \
+        create_table_sql = 'create table if not exists user(' \
                            'id_card varchar(40), name varchar(20), age int, sex varchar(5), ' \
                            'score int, nick_name varchar(20), comments varchar(200));'
 
