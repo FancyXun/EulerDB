@@ -81,6 +81,8 @@ class RemoteExecutor(AbstractQueryExecutor):
             if parser.query_type == QueryType.SELECT:
                 enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
                 cursor = self.conn.cursor()
+                enc_query = self.inject_procedure(cursor, query, enc_query)
+                print('what is enc_query:', enc_query)
                 cursor.execute(enc_query)
                 self.result = cursor.fetchall()
             else:
@@ -97,4 +99,19 @@ class RemoteExecutor(AbstractQueryExecutor):
     def get_sql_columns(self):
         return self.rewriter.select_columns
 
-
+    @staticmethod
+    def inject_procedure(cursor, origin_query, enc_query):
+        if 'SUM' not in enc_query and 'AVG' not in enc_query:
+            return enc_query
+        n_square = Delta.get_paillier_n_square(origin_query, cursor._connection.database)
+        sum_feature_name_list, avg_feature_name_list, table_name, need_paillier_procedure = \
+            Delta.get_paillier_procedure_info(enc_query)
+        if not need_paillier_procedure:
+            return enc_query
+        for feature_name in sum_feature_name_list:
+            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name, n_square)
+            enc_query = Delta.modify_sum_query(enc_query, feature_name)
+        for feature_name in avg_feature_name_list:
+            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name, n_square)
+            enc_query = Delta.modify_avg_query(enc_query, feature_name)
+        return enc_query

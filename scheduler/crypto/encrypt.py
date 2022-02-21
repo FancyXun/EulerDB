@@ -24,6 +24,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 from gmssl.sm4 import CryptSM4, SM4_ENCRYPT, SM4_DECRYPT
 from scheduler.crypto.ope.ope import OPE
+from tensorflow_federated_boost.fast_paillier import paillier
 
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
@@ -226,3 +227,23 @@ class FuzzyCipher:
                 result = result + AESCipher("points").encrypt(str(raw)[i: i+2])
 
         return result
+
+
+class PAILLIERCipher:
+    input = 'INT'
+    output = 'STRING'
+
+    def __init__(self, n, p, q, precision=None):
+        self.pk = paillier.PaillierPublicKey(n)
+        self.sk = paillier.PaillierPrivateKey(self.pk, p, q)
+        self.precision = precision
+
+    def encrypt(self, raw):
+        return self.pk.encrypt(int(raw), self.precision).ciphertext_str()
+
+    def decrypt(self, enc):
+        num = 1
+        if ',' in str(enc):
+            enc, num = enc.split(',')
+        enc_number = paillier.EncryptedNumber(self.pk, int(enc))
+        return self.sk.decrypt(enc_number) / int(num)

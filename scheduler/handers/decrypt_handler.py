@@ -1,3 +1,4 @@
+from decimal import Decimal
 from scheduler.schema.metadata import CIPHERS_META
 from scheduler.handers.base import Handler
 
@@ -20,14 +21,13 @@ class DecryptHandler(Handler):
             new_row = []
             for state, col in zip(result_state, row):
                 if state == "PLAINTEXT":
+                    if isinstance(col, Decimal):
+                        col = float(col)
                     new_row.append(col)
                 else:
-                    new_row.append(self.__decrypt__(col))
+                    new_row.append(self.__decrypt__(col, state))
             self.result.append(tuple(new_row))
         return self.result
 
-    @staticmethod
-    def __decrypt__(enc):
-        if isinstance(enc, int):
-            return CIPHERS_META["OPE"].decrypt(enc)
-        return CIPHERS_META["SYMMETRIC"].decrypt(enc)
+    def __decrypt__(self, enc, cipher):
+        return CIPHERS_META[cipher].decrypt(enc)

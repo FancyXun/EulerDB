@@ -9,7 +9,9 @@ from scheduler.schema.metadata import \
     CIPHERS_META, \
     FUNC_CIPHERS, \
     ENCRYPT_SQL_TYPE, \
-    FUZZY_TYPE
+    FUZZY_TYPE, \
+    ARITHMETIC_TYPE
+from tensorflow_federated_boost.fast_paillier import paillier
 
 from scheduler.utils.keywords import SELECT_STATEMENTS, MODIFY_STATEMENTS
 
@@ -68,12 +70,13 @@ class Rewriter(object):
                             new_values.append(value)
                         else:
                             for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].keys():
-                                new_values.append(self.encrypt_value(value['value'], enc))
+                                new_values.append(self.encrypt_value(value['value'], enc, enc_table_meta))
                     json['query']['select'] = new_values
         for keyword in SELECT_STATEMENTS:
             if keyword in json.keys():
                 if 'from' in json.keys():
                     select_table = json['from']
+                    CIPHERS_META.update(Delta.add_ciphers_meta(self.db_meta[select_table]))
                     json[keyword] = self.rewrite_select_items(json[keyword], select_table)
                     json['from'] = self.db_meta[select_table]['anonymous']
                     if 'where' in json.keys():
@@ -91,9 +94,10 @@ class Rewriter(object):
         return json
 
     @staticmethod
-    def encrypt_value(value, enc):
+    def encrypt_value(value, enc, enc_table_meta=None):
+        CIPHERS_META.update(Delta.add_ciphers_meta(enc_table_meta))
         if isinstance(value, int):
-            if CIPHERS_META[enc].input == 'INT':
+            if CIPHERS_META[enc].output == 'INT':
                 return {'value': CIPHERS_META[enc].encrypt(int(value))}
             else:
                 return {'value': {'literal': CIPHERS_META[enc].encrypt(str(value))}}
@@ -251,13 +255,21 @@ class Rewriter(object):
                 enc_col_name = col_name.upper() + 'FUZZY'
                 enc_columns.append(enc_col_name + ' ' + FUZZY_TYPE)
                 columns_kv[col_name]['ENC_COLUMNS'].update({"FUZZY": enc_col_name})
+            if self.encrypted_cols[col['name']]['arithmetic']:
+                enc_col_name = col_name.upper() + 'ARITHMETIC'
+                enc_columns.append(enc_col_name + ' ' + ARITHMETIC_TYPE)
+                columns_kv[col_name]['ENC_COLUMNS'].update({"ARITHMETIC": enc_col_name})
             columns_kv[col_name]['PLAINTEXT'] = False
         anonymous_table = "TABEL_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
         query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + ');'
+        pk, sk = paillier.generate_paillier_keypair(n_length=16)
         table_meta = {
             table_name: {
                 'anonymous': anonymous_table,
-                'columns': columns_kv
+                'columns': columns_kv,
+                'paillier public key': [str(pk.n), str(pk.nsquare)],
+                'Paillier private key': [str(sk.p), str(sk.q)],
+                'precision': None
             }
         }
         Delta().update_delta(self.db, table_meta)
