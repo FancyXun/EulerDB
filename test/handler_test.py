@@ -28,6 +28,7 @@ sql_list = {
          'select id_card, name, age from {} where age > 40 limit 100'.format(table),
          'select id_card, name, age from {} where age < 10 limit 100'.format(table),
          'select id_card, name, age from {} where age <= 10 limit 100'.format(table),
+         'select id_card, name, age, score from {} where score > 70 limit 100'.format(table),
          ],
     'order_by_min_max':
         ['select * from {} where id_card = "496715970993917044442778" and name = "iezlcpnjws"'.format(table),
@@ -36,10 +37,12 @@ sql_list = {
          'select distinct age, name, id_card from {} limit 1000'.format(table),
          'select max(age), min(age) from {}'.format(table),
          'select id_card, name from {} WHERE age = 30 limit 100'.format(table),
-         'select max(score), min(score) from {} '.format(table)
+         'select max(score), min(score) from {} '.format(table),
+         'select max(score), min(age) from {} '.format(table)
          ],
     'like':
-        ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table)],
+        ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table),
+         'select id_card, name, nick_name from {} where nick_name like "%fpb%" limit 5'.format(table),],
     'count':
         ['select count(*) from {}'.format(table)],
     'delete':

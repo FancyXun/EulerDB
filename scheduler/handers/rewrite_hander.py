@@ -116,7 +116,7 @@ class Rewriter(object):
                     if not columns_meta[v[0]]['PLAINTEXT']:
                         if columns_meta[v[0]]['TYPE'] == 'int':
                             return {k: [columns_meta[v[0]]['ENC_COLUMNS']["OPE"],
-                                           self.rewrite_where(v[1], table, 'OPE')]}
+                                        self.rewrite_where(v[1], table, 'OPE')]}
                 if k == 'like':
                     if not columns_meta[v[0]]['PLAINTEXT']:
                         return {
@@ -221,6 +221,7 @@ class Rewriter(object):
         columns = create_table['columns']
         enc_columns = []
         columns_kv = {}
+        columns = columns if isinstance(columns, list) else [columns]
         for col in columns:
             col_name = col['name']
             col_type = col['type']
