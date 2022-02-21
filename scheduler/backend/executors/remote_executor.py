@@ -1,3 +1,4 @@
+import re
 import mysql.connector
 from mysql.connector import Error
 
@@ -102,8 +103,9 @@ class RemoteExecutor(AbstractQueryExecutor):
     def inject_procedure(cursor, enc_query):
         if 'SUM' not in enc_query and 'AVG' not in enc_query:
             return enc_query
-        sum_feature_name_list, avg_feature_name_list, table_name, need_paillier_procedure = \
+        sum_feature_name_list, avg_feature_name_list, need_paillier_procedure = \
             Delta.get_paillier_procedure_info()
+        table_name = enc_query[re.search('FROM ', enc_query).span()[1]:]
         if not need_paillier_procedure:
             return enc_query
         for feature_name in sum_feature_name_list:

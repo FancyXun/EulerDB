@@ -80,6 +80,7 @@ class TestPostHandler(TestCase):
 
         json_data = json.dumps(content)
         resp = requests.post('http://localhost:8888/query', json_data)
+        content.pop('encrypted_columns')
         print(resp.json()['result'])
 
     def test_handler_insert_table(self):

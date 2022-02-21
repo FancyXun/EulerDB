@@ -118,7 +118,6 @@ class Delta(object):
         sum_feature_name_list = []
         avg_feature_name_list = []
         json = cls.table_json
-        table_name = json['from']
         for value in json['select']:
             if isinstance(value, dict):
                 try:
@@ -129,7 +128,7 @@ class Delta(object):
                 except:
                     pass
         need_paillier_procedure = len(sum_feature_name_list) + len(avg_feature_name_list)
-        return sum_feature_name_list, avg_feature_name_list, table_name, need_paillier_procedure
+        return sum_feature_name_list, avg_feature_name_list, need_paillier_procedure
 
     @staticmethod
     def modify_sum_query(enc_query, feature_name):
