@@ -83,6 +83,7 @@ class Rewriter(object):
                         json['where'] = self.rewrite_where(json['where'], select_table)
                     if 'orderby' in json.keys():
                         json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
+                    Delta.table_json = json
         for keyword in MODIFY_STATEMENTS:
             if keyword in json.keys():
                 modify_table = json[keyword]

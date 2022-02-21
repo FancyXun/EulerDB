@@ -1,0 +1,5 @@
+FROM python:3.6
+COPY requirements.txt requirements.txt
+RUN pip3 install -i https://pypi.doubanio.com/simple -r requirements.txt
+COPY . .
+CMD python3 service.py

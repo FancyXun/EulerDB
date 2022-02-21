@@ -44,6 +44,7 @@ FUNC_CIPHERS = {
 class Delta(object):
     __instance = None
     meta = None
+    table_json = None
 
     def __new__(cls, *args, **kwargs):
         if Delta.__instance is None:
@@ -92,7 +93,8 @@ class Delta(object):
         return {}
 
     @staticmethod
-    def create_paillier_sum_procedure(cursor, feature_name, table_name, n_square):
+    def create_paillier_sum_procedure(cursor, feature_name, table_name):
+        n_square = CIPHERS_META['ARITHMETIC'].pk.nsquare
         drop_procedure = "drop procedure if exists paillierSum"
         cursor.execute(drop_procedure)
         create_procedure = f"CREATE PROCEDURE `paillierSum`(IN nSquare bigint, OUT sum{feature_name} bigint, OUT num{feature_name} int)" \
@@ -111,14 +113,13 @@ class Delta(object):
         table_meta = Delta.load_delta()[db][origin_table]
         return table_meta["paillier public key"][1]
 
-    @staticmethod
-    def get_paillier_procedure_info(enc_query):
+    @classmethod
+    def get_paillier_procedure_info(cls):
         sum_feature_name_list = []
         avg_feature_name_list = []
-        json = parse(enc_query)
+        json = cls.table_json
         table_name = json['from']
-        for i in json['select']:
-            value = i['value']
+        for value in json['select']:
             if isinstance(value, dict):
                 try:
                     if value.get('sum', '').endswith('ARITHMETIC'):
