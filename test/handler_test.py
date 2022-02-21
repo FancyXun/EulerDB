@@ -7,7 +7,7 @@ import unittest
 db_host = '127.0.0.1'
 db = 'points'
 user = 'root'
-password = 'mysqlxia123'
+password = 'root'
 port = 3306
 
 
