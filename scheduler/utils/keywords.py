@@ -6,6 +6,8 @@
 # Contact: FancyXun (837633751@qq.com)
 #
 
-SELECT_STATEMENTS = ['select', 'select_distinct']
+Select_Operation = ['select', 'select_distinct']
 
-MODIFY_STATEMENTS = ['update', 'delete']
+Modify_Operation = ['update', 'delete']
+
+Logical_Operation = ['and', 'or']

@@ -11,7 +11,7 @@ from scheduler.schema.metadata import \
     ENCRYPT_SQL_TYPE, \
     FUZZY_TYPE
 
-from scheduler.utils.keywords import SELECT_STATEMENTS, MODIFY_STATEMENTS
+from scheduler.utils.keywords import Logical_Operation, Select_Operation, Modify_Operation
 
 
 class Rewriter(object):
@@ -70,7 +70,7 @@ class Rewriter(object):
                             for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].keys():
                                 new_values.append(self.encrypt_value(value['value'], enc))
                     json['query']['select'] = new_values
-        for keyword in SELECT_STATEMENTS:
+        for keyword in Select_Operation:
             if keyword in json.keys():
                 if 'from' in json.keys():
                     select_table = json['from']
@@ -80,7 +80,7 @@ class Rewriter(object):
                         json['where'] = self.rewrite_where(json['where'], select_table)
                     if 'orderby' in json.keys():
                         json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
-        for keyword in MODIFY_STATEMENTS:
+        for keyword in Modify_Operation:
             if keyword in json.keys():
                 modify_table = json[keyword]
                 json[keyword] = self.db_meta[modify_table]['anonymous']
@@ -123,8 +123,8 @@ class Rewriter(object):
                             'like': [columns_meta[v[0]]['ENC_COLUMNS']["FUZZY"],
                                      self.rewrite_where(v[1], table, 'FUZZY')]
                         }
-                if k == 'and':
-                    return {'and': [self.rewrite_where(a_v, table, cipher) for a_v in v]}
+                if k in Logical_Operation:
+                    return {k: [self.rewrite_where(a_v, table, cipher) for a_v in v]}
                 if k == 'literal':
                     return {'literal': self.rewrite_where(v, table, cipher)}
         if isinstance(json, int):

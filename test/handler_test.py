@@ -32,6 +32,7 @@ sql_list = {
          ],
     'order_by_min_max':
         ['select * from {} where id_card = "496715970993917044442778" and name = "iezlcpnjws"'.format(table),
+         'select * from {} where id_card = "945640842494270259913766" or name = "tlpkiarvng"'.format(table),
          'select id_card, name, age from {} order by age limit 5'.format(table),
          'select distinct id_card, name, age from {} limit 5'.format(table),
          'select distinct age, name, id_card from {} limit 1000'.format(table),
