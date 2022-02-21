@@ -11,7 +11,7 @@ from scheduler.schema.metadata import \
     ENCRYPT_SQL_TYPE, \
     FUZZY_TYPE, \
     ARITHMETIC_TYPE
-from tensorflow_federated_boost.fast_paillier import paillier
+from phe import paillier
 
 from scheduler.utils.keywords import SELECT_STATEMENTS, MODIFY_STATEMENTS
 

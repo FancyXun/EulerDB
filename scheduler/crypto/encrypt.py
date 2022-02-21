@@ -24,7 +24,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 from gmssl.sm4 import CryptSM4, SM4_ENCRYPT, SM4_DECRYPT
 from scheduler.crypto.ope.ope import OPE
-from tensorflow_federated_boost.fast_paillier import paillier
+from phe import paillier
 
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
@@ -239,7 +239,7 @@ class PAILLIERCipher:
         self.precision = precision
 
     def encrypt(self, raw):
-        return self.pk.encrypt(int(raw), self.precision).ciphertext_str()
+        return str(self.pk.encrypt(int(raw), self.precision).ciphertext(False))
 
     def decrypt(self, enc):
         num = 1
