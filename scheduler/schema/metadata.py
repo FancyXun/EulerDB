@@ -9,7 +9,7 @@ META_PATH = 'data/meta.json'
 ENCRYPT_SQL_TYPE = {
     "INT":
         {
-            "OPE": "INT",
+            "OPE": "BIGINT",
             "SYMMETRIC": "VARCHAR(300)"
         },
     "VARCHAR":

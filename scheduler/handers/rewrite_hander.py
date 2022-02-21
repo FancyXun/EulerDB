@@ -183,7 +183,7 @@ class Rewriter(object):
             return result
         if json == {'count': '*'}:
             self.select_state.append("PLAINTEXT")
-            self.select_columns["count"] = "INT"
+            self.select_columns["count"] = "int"
             return json
         if isinstance(json, list):
             return [self.rewrite_select_items(v['value'], table) for v in json]
