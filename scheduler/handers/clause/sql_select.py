@@ -2,14 +2,14 @@ import collections
 from scheduler.schema.metadata import FUNC_CIPHERS
 
 
-class Select(object):
+class SQLSelect(object):
     def __init__(self, db_meta):
         self.select_columns = collections.OrderedDict()
         self.db_meta = db_meta
         self.select_state = []
 
-    def rewrite(self, json, table, cipher='SYMMETRIC'):
-        if json == "*":
+    def rewrite(self, select_val, table, cipher='SYMMETRIC', json=None):
+        if select_val == "*":
             result = []
             for idx, (k, v) in enumerate(self.db_meta[table]['columns'].items()):
                 if v['PLAINTEXT']:
@@ -20,24 +20,24 @@ class Select(object):
                     self.select_state.append(cipher)
                 self.select_columns[k] = v['TYPE']
             return result
-        if json == {'count': '*'}:
+        if select_val == {'count': '*'}:
             self.select_state.append("PLAINTEXT")
             self.select_columns["count"] = "int"
-            return json
-        if isinstance(json, list):
-            return [self.rewrite(v['value'], table) for v in json]
-        if isinstance(json, str):
-            col = self.db_meta[table]['columns'][json]
-            self.select_columns[json] = col['TYPE']
+            return select_val
+        if isinstance(select_val, list):
+            return [self.rewrite(v['value'], table) for v in select_val]
+        if isinstance(select_val, str):
+            col = self.db_meta[table]['columns'][select_val]
+            self.select_columns[select_val] = col['TYPE']
             if col['PLAINTEXT']:
                 self.select_state.append("PLAINTEXT")
-                return json
+                return select_val
             else:
                 self.select_state.append(cipher)
                 return col['ENC_COLUMNS'][cipher]
-        if isinstance(json, dict):
+        if isinstance(select_val, dict):
             result = {}
-            for k, v in json.items():
+            for k, v in select_val.items():
                 if k in FUNC_CIPHERS.keys():
                     result[k] = self.rewrite(v, table, FUNC_CIPHERS[k])
                 else:

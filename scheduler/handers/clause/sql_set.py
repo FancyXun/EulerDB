@@ -1,15 +1,15 @@
-from scheduler.handers.clause.where import Where
+from scheduler.handers.clause.sql_where import SQLWhere
 
 
 class SQLSet(object):
-    def __init__(self, db_meta, where):
+    def __init__(self, db_meta):
         self.db_meta = db_meta
-        self.where = where
+        self.where = SQLWhere(db_meta)
 
-    def rewrite(self, json, table):
+    def rewrite(self, set_value, table, json=None):
         result = {}
         enc_table_meta = self.db_meta[table]
-        for k, v in json.items():
+        for k, v in set_value.items():
             if enc_table_meta['columns'][k]['PLAINTEXT']:
                 result[k] = v
             else:

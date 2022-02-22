@@ -17,7 +17,7 @@ content = {
 }
 
 
-table = 'test'
+table = 'test1'
 
 
 sql_list = {
