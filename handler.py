@@ -214,21 +214,17 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                       "error": None}
         order_columns = []
         for k, v in columns.items():
-            if v == 'varchar':
-                format_res['columns'].append({"name": k,
-                                              "javaType": "VARCHAR",
-                                              "dbType": "VARCHAR",
-                                              "length": 100
-                                              })
-            elif v == 'int':
-                format_res['columns'].append({"name": k,
-                                              "javaType": "INTEGER",
-                                              "dbType": "INT",
-                                              "length": 10
-                                              })
+            format_res['columns'].append(build_columns(k, v))
             order_columns.append(k)
         result = res["result"]
         data = []
+        if result:
+            if len(result[0]) > len(order_columns):
+                order_columns = ["null" + str(i) for i in range(len(result[0]))]
+                format_res['columns'] = []
+                for k, v in zip(order_columns, result[0]):
+                    tmp = build_columns(k, 'int') if isinstance(v, int) else build_columns(k, 'varchar')
+                    format_res['columns'].append(tmp)
         for row in result:
             format_row = {}
             for k, v in zip(order_columns, row):
@@ -236,6 +232,21 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             data.append(json.dumps(format_row))
         format_res["data"] = "[" + ",".join(data) + "]"
         return format_res
+
+
+def build_columns(k, v):
+    if v == 'varchar':
+        return {"name": k,
+                "javaType": "VARCHAR",
+                "dbType": "VARCHAR",
+                "length": 100
+                }
+    else:
+        return {"name": k,
+                "javaType": "INTEGER",
+                "dbType": "INT",
+                "length": 10
+                }
 
 
 class QueryComponentHandler(tornado.web.RequestHandler, ABC):
