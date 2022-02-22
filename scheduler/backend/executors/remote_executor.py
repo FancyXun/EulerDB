@@ -95,6 +95,6 @@ class RemoteExecutor(AbstractQueryExecutor):
         return self.rewriter.rewrite_query(query)
 
     def get_sql_columns(self):
-        return self.rewriter.select_columns
+        return self.rewriter.select.select_columns
 
 

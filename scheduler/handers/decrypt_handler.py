@@ -15,7 +15,7 @@ class DecryptHandler(Handler):
         pass
 
     def decrypt(self, enc_result):
-        result_state = self.executor.rewriter.select_state
+        result_state = self.executor.rewriter.select.select_state
         for row in enc_result:
             new_row = []
             for state, col in zip(result_state, row):
