@@ -263,7 +263,7 @@ class Rewriter(object):
             columns_kv[col_name]['PLAINTEXT'] = False
         anonymous_table = "TABEL_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
         query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + ');'
-        pk, sk = paillier.generate_paillier_keypair(n_length=16)
+        pk, sk = paillier.generate_paillier_keypair(n_length=64)
         table_meta = {
             table_name: {
                 'anonymous': anonymous_table,

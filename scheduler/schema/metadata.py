@@ -93,7 +93,13 @@ class Delta(object):
         return {}
 
     @staticmethod
-    def create_paillier_sum_procedure(cursor, feature_name, table_name):
+    def create_paillier_sum_procedure(cursor, feature_name, table_name, mini):
+        if not mini:
+            set_concat_length_global_query = 'SET GLOBAL group_concat_max_len = 18446744073709551615'
+            set_concat_length_session_query = 'SET SESSION group_concat_max_len = 18446744073709551615'
+            cursor.execute(set_concat_length_global_query)
+            cursor.execute(set_concat_length_session_query)
+            return
         n_square = CIPHERS_META['ARITHMETIC'].pk.nsquare
         drop_procedure = "drop procedure if exists paillierSum"
         cursor.execute(drop_procedure)
@@ -118,7 +124,10 @@ class Delta(object):
         sum_feature_name_list = []
         avg_feature_name_list = []
         json = cls.table_json
-        for value in json['select']:
+        json_select = json['select']
+        if not isinstance(json_select, list):
+            json_select = [json_select['value']]
+        for value in json_select:
             if isinstance(value, dict):
                 try:
                     if value.get('sum', '').endswith('ARITHMETIC'):
@@ -131,10 +140,14 @@ class Delta(object):
         return sum_feature_name_list, avg_feature_name_list, need_paillier_procedure
 
     @staticmethod
-    def modify_sum_query(enc_query, feature_name):
+    def modify_sum_query(enc_query, feature_name, mini):
+        if not mini:
+            return enc_query.replace('SUM({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',SUM')".format(feature_name))
         return enc_query.replace('SUM({})'.format(feature_name), '@sum{}'.format(feature_name))
 
     @staticmethod
-    def modify_avg_query(enc_query, feature_name):
+    def modify_avg_query(enc_query, feature_name, mini):
+        if not mini:
+            return enc_query.replace('AVG({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',AVG')".format(feature_name))
         return enc_query.replace('AVG({})'.format(feature_name), "concat(@sum{}, ',',@num{})".format(feature_name,
                                                                                                      feature_name))

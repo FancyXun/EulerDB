@@ -60,7 +60,7 @@ class RemoteExecutor(AbstractQueryExecutor):
 
         return connection.connection()
 
-    def call(self, query, parser, encrypted_cols):
+    def call(self, query, parser, encrypted_cols, mini=False):
         """
 
         """
@@ -82,7 +82,7 @@ class RemoteExecutor(AbstractQueryExecutor):
             if parser.query_type == QueryType.SELECT:
                 enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
                 cursor = self.conn.cursor()
-                enc_query = self.inject_procedure(cursor, enc_query)
+                enc_query = self.inject_procedure(cursor, enc_query, mini)
                 cursor.execute(enc_query)
                 self.result = cursor.fetchall()
             else:
@@ -100,7 +100,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         return self.rewriter.select_columns
 
     @staticmethod
-    def inject_procedure(cursor, enc_query):
+    def inject_procedure(cursor, enc_query, mini=False):
         if 'SUM' not in enc_query and 'AVG' not in enc_query:
             return enc_query
         sum_feature_name_list, avg_feature_name_list, need_paillier_procedure = \
@@ -109,9 +109,9 @@ class RemoteExecutor(AbstractQueryExecutor):
         if not need_paillier_procedure:
             return enc_query
         for feature_name in sum_feature_name_list:
-            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name)
-            enc_query = Delta.modify_sum_query(enc_query, feature_name)
+            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name, mini)
+            enc_query = Delta.modify_sum_query(enc_query, feature_name, mini)
         for feature_name in avg_feature_name_list:
-            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name)
-            enc_query = Delta.modify_avg_query(enc_query, feature_name)
+            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name, mini)
+            enc_query = Delta.modify_avg_query(enc_query, feature_name, mini)
         return enc_query

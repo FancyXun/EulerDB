@@ -38,7 +38,8 @@ sql_list = {
          'select id_card, name from {} WHERE age = 30 limit 100'.format(table),
          'select max(score), min(score) from {} '.format(table),
          'select sum(score), avg(score) from {} '.format(table),
-         'select sum(age), avg(age) from {} '.format(table)
+         'select avg(age), sum(age), count(*) from {} '.format(table),
+         'select sum(age) from {} '.format(table)
          ],
     'like':
         ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table)],

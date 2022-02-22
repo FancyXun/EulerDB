@@ -16,6 +16,7 @@
 from base64 import b64decode
 from base64 import b64encode
 from hashlib import sha256
+from functools import reduce
 import random
 
 from cryptography.hazmat.primitives import padding
@@ -242,6 +243,18 @@ class PAILLIERCipher:
         return str(self.pk.encrypt(int(raw), self.precision).ciphertext(False))
 
     def decrypt(self, enc):
+        enc_list = enc.split(',')
+        enc_value_list, agg_type = enc_list[:-1], enc_list[-1]
+        print(agg_type)
+        n_square = self.pk.nsquare
+        if agg_type == 'SUM':
+            sum_enc_res = reduce(lambda x, y: (x * y) % n_square, map(lambda x: int(x), enc_value_list), 1)
+            enc_number = paillier.EncryptedNumber(self.pk, int(sum_enc_res))
+            return self.sk.decrypt(enc_number)
+        elif agg_type == 'AVG':
+            sum_enc_res = reduce(lambda x, y: (x * y) % n_square, map(lambda x: int(x), enc_value_list), 1)
+            enc_number = paillier.EncryptedNumber(self.pk, int(sum_enc_res))
+            return self.sk.decrypt(enc_number) / len(enc_value_list)
         num = 1
         if ',' in str(enc):
             enc, num = enc.split(',')
