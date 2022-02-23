@@ -1,9 +1,10 @@
 from scheduler.schema.metadata import CIPHERS_META
+from scheduler.handers.clause.rewriter import Rewriter
 
 
-class SQLValues(object):
+class SQLValues(Rewriter):
     def __init__(self, db_meta):
-        self.db_meta = db_meta
+        super().__init__(db_meta)
 
     def rewrite(self, values, table, json=None):
         new_values = []

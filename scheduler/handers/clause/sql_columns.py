@@ -1,8 +1,9 @@
+from scheduler.handers.clause.rewriter import Rewriter
 
 
-class SQLColumns(object):
+class SQLColumns(Rewriter):
     def __init__(self, db_meta):
-        self.db_meta = db_meta
+        super().__init__(db_meta)
 
     def rewrite(self, columns, table, json=None):
         enc_table_meta = self.db_meta[table]

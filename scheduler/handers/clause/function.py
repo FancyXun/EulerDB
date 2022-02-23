@@ -1,8 +1,9 @@
+from scheduler.handers.clause.rewriter import Rewriter
 
 
-class OrderBy(object):
+class OrderBy(Rewriter):
     def __init__(self, db_meta):
-        self.db_meta = db_meta
+        super().__init__(db_meta)
 
     def rewrite(self, orderby_val, table, json=None):
         col = self.db_meta[table]['columns'][orderby_val['value']]

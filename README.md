@@ -29,7 +29,7 @@ $ python service.py
 
 ### Test
 ```shell script
-$ python handler_test.py
+$ python single_table_test.py
 ```
 
 ## Sql-editor

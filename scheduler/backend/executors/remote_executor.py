@@ -1,3 +1,5 @@
+import logging
+
 import mysql.connector
 from mysql.connector import Error
 
@@ -32,11 +34,6 @@ class RemoteExecutor(AbstractQueryExecutor):
             connection = PooledDB(
                 mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
                 passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
-            # connection = mysql.connector.connect(host=conn_info['host'],
-            #                                      user=conn_info['user'],
-            #                                      database=conn_info['db'],
-            #                                      password=conn_info['password'],
-            #                                      port=conn_info['port'])
             connection_pool[db_key] = connection
             print("mysql connected from {}" .format(db_key))
         else:
@@ -67,27 +64,17 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.encrypted_cols = encrypted_cols
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
-        if self.encrypted_cols:
-            if parser.query_type == QueryType.CREATE:
-                enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
-                try:
-                    cursor = self.conn.cursor()
-                    cursor.execute(enc_query)
-                    Delta().save_delta()
-                except Error as e:
-                    print("Error while connecting to MySQL", e)
-                    # todo:delete tabel meta
+        enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
+        logging.info("Encrypted sql is {}".format(enc_query))
+        cursor = self.conn.cursor()
+        cursor.execute(enc_query)
+        if parser.query_type == QueryType.CREATE:
+            assert self.encrypted_cols is not None
+            Delta().save_delta()
+        elif parser.query_type == QueryType.SELECT:
+            self.result = cursor.fetchall()
         else:
-            if parser.query_type == QueryType.SELECT:
-                enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
-                cursor = self.conn.cursor()
-                cursor.execute(enc_query)
-                self.result = cursor.fetchall()
-            else:
-                enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
-                cursor = self.conn.cursor()
-                cursor.execute(enc_query)
-                self.conn.commit()
+            self.conn.commit()
         self.conn.close()
 
     def dispatch(self, query, db, enc_cols):

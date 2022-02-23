@@ -1,9 +1,10 @@
 from scheduler.handers.clause.sql_where import SQLWhere
+from scheduler.handers.clause.rewriter import Rewriter
 
 
-class SQLSet(object):
+class SQLSet(Rewriter):
     def __init__(self, db_meta):
-        self.db_meta = db_meta
+        super().__init__(db_meta)
         self.where = SQLWhere(db_meta)
 
     def rewrite(self, set_value, table, json=None):

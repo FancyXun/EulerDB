@@ -1,28 +1,45 @@
 from scheduler.schema.metadata import CIPHERS_META
 from scheduler.utils.keywords import Logical_Operation
+from scheduler.handers.clause.rewriter import Rewriter
 
 
-class SQLWhere(object):
+class SQLWhere(Rewriter):
     def __init__(self, db_meta):
-        self.db_meta = db_meta
+        super().__init__(db_meta)
 
     def rewrite(self, where_value, table, cipher='SYMMETRIC', json=None):
-        columns_meta = self.db_meta[table]['columns']
+        try:
+            col = self.db_meta[table]['columns']
+        except Exception as e:
+            # table is list
+            col = None
         if isinstance(where_value, dict):
             for k, v in where_value.items():
                 if k == 'eq':
-                    if not columns_meta[v[0]]['PLAINTEXT']:
-                        return {'eq': [columns_meta[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
-                                       self.rewrite(v[1], table)]}
+                    if col:
+                        if not col[v[0]]['PLAINTEXT']:
+                            return {'eq': [col[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
+                                           self.rewrite(v[1], table)]}
+                    else:
+                        t_name, col_name = self.split_table_col(v[0], table)
+                        t_name1, col_name1 = self.split_table_col(v[1], table)
+                        col = self.db_meta[t_name]['columns']
+                        col1 = self.db_meta[t_name1]['columns']
+                        return {
+                            'eq': [self.db_meta[t_name]['anonymous'] + "." +
+                                   col[col_name]['ENC_COLUMNS']["SYMMETRIC"],
+                                   self.db_meta[t_name1]['anonymous'] + "." +
+                                   col1[col_name1]['ENC_COLUMNS']["SYMMETRIC"]]}
+
                 if k in ['gt', 'lt', 'gte', 'lte']:
-                    if not columns_meta[v[0]]['PLAINTEXT']:
-                        if columns_meta[v[0]]['TYPE'] == 'int':
-                            return {k: [columns_meta[v[0]]['ENC_COLUMNS']["OPE"],
+                    if not col[v[0]]['PLAINTEXT']:
+                        if col[v[0]]['TYPE'] == 'int':
+                            return {k: [col[v[0]]['ENC_COLUMNS']["OPE"],
                                         self.rewrite(v[1], table, 'OPE')]}
                 if k == 'like':
-                    if not columns_meta[v[0]]['PLAINTEXT']:
+                    if not col[v[0]]['PLAINTEXT']:
                         return {
-                            'like': [columns_meta[v[0]]['ENC_COLUMNS']["FUZZY"],
+                            'like': [col[v[0]]['ENC_COLUMNS']["FUZZY"],
                                      self.rewrite(v[1], table, 'FUZZY')]
                         }
                 if k in Logical_Operation:

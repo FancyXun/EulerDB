@@ -1,8 +1,9 @@
+from scheduler.handers.clause.rewriter import Rewriter
 
 
-class SQLFrom(object):
+class SQLFrom(Rewriter):
     def __init__(self, db_meta):
-        self.db_meta = db_meta
+        super().__init__(db_meta)
 
     def rewrite(self, from_value, table, json=None):
         if isinstance(table, list):
