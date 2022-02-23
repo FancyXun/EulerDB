@@ -8,5 +8,4 @@ class Rewriter(object):
     @staticmethod
     def split_table_col(select_val, table):
         select_val_list = select_val.split(".")
-        assert select_val_list[0] in table
         return select_val_list[0], select_val_list[1]

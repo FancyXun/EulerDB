@@ -21,7 +21,14 @@ table1 = 'test1'
 sql_list = {
     "tables":
     ['SELECT {}.id_card, {}.age, {}.age, {}.score '
-     'FROM {}, {} WHERE {}.age = {}.age limit 10'.format(table, table, table1, table1, table, table1, table, table1)]
+     'FROM {}, {} WHERE {}.age = {}.age limit 10'.format(table, table, table1, table1, table, table1, table, table1)],
+    "join":
+    ['SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.age limit 10'
+     .format(table, table, table1, table, table1, table, table1),
+     'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.score limit 10'
+     .format(table, table, table1, table, table1, table, table1)
+     ]
+
 }
 
 

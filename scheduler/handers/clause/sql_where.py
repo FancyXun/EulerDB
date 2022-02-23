@@ -21,15 +21,18 @@ class SQLWhere(Rewriter):
                             return {'eq': [col[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
                                            self.rewrite(v[1], table)]}
                     else:
+                        # We don't handle the situation when the join items are plaintext and cipher, but the sql still
+                        # works. It just returns empty result...
                         t_name, col_name = self.split_table_col(v[0], table)
                         t_name1, col_name1 = self.split_table_col(v[1], table)
-                        col = self.db_meta[t_name]['columns']
-                        col1 = self.db_meta[t_name1]['columns']
+                        col = self.db_meta[t_name]['columns'][col_name]
+                        col1 = self.db_meta[t_name1]['columns'][col_name1]
+                        col_name = col_name if col['PLAINTEXT'] else col['ENC_COLUMNS'][cipher]
+                        col_name1 = col_name1 if col1['PLAINTEXT'] else col1['ENC_COLUMNS'][cipher]
                         return {
-                            'eq': [self.db_meta[t_name]['anonymous'] + "." +
-                                   col[col_name]['ENC_COLUMNS']["SYMMETRIC"],
-                                   self.db_meta[t_name1]['anonymous'] + "." +
-                                   col1[col_name1]['ENC_COLUMNS']["SYMMETRIC"]]}
+                            'eq': [self.db_meta[t_name]['anonymous'] + "." + col_name,
+                                   self.db_meta[t_name1]['anonymous'] + "." + col_name1
+                                   ]}
 
                 if k in ['gt', 'lt', 'gte', 'lte']:
                     if not col[v[0]]['PLAINTEXT']:

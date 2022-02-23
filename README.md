@@ -54,7 +54,7 @@ SQL Type                    | Status     | SQL Type            | Status
 **SQL in**                 | TODO       | **SQL len**         | TODO 
 **SQL between**                 | TODO       | **SQL nulls**       | TODO 
 **SQL join**                 | TODO       | **SQL now**         | TODO 
-**SQL inner join**                 | TODO       | **SQL first**       | TODO 
+**SQL inner join**                 | ```DONE```       | **SQL first**       | TODO 
 **SQL left join**                 | TODO       | **SQL last**        | TODO 
 **SQL right join**                 | TODO       | **SQL limit**       | ```DONE``` 
 **SQL full join**                 | TODO       | **SQL alter**       | ```DONE(not support)``` 
