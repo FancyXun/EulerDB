@@ -17,7 +17,7 @@ content = {
 }
 
 
-table = 'test1'
+table = 'test'
 
 
 sql_list = {
@@ -84,8 +84,14 @@ class TestPostHandler(TestCase):
         resp = requests.post('http://localhost:8888/query', json_data)
         print(resp.json()['result'])
 
+    def test_drop_table(self):
+        sql = 'drop table {}'.format(table)
+        content['query'] = sql
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+
     def test_handler_insert_table(self):
-        for i in range(10000):
+        for i in range(1000):
             query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + str(
                 random.randint(1000000000000000000, 1000000000000000000000000)) + '","' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(

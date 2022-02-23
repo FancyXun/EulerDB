@@ -42,7 +42,7 @@ $ python single_table_test.py
 SQL Type                    | Status     | SQL Type            | Status                                                                                                                                           
 ----------------------------- |------------|---------------------| --------------
 **SQL select**                 | ```DONE``` | **SQL unique**      | TODO(low) 
-**SQL distinct**                 | ```DONE``` | **SQL drop**        | TODO 
+**SQL distinct**                 | ```DONE``` | **SQL drop**        | ```DONE``` 
 **SQL where**                 | ```DONE``` | **SQL avg**         | TODO 
 **SQL and & or**                | ```DONE``` | **SQL count**       | ```DONE``` 
 **SQL order by**               | ```DONE``` | **SQL max**         | ```DONE```

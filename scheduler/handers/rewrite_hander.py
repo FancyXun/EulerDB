@@ -17,9 +17,10 @@ class Rewriter(Clause):
         """
 
         """
+        table = None
         self.origin_query = query
         if self.encrypted_cols:
-            return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols)
+            return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols), table
         json = parse(query)
         source_json = copy.deepcopy(json)
         for key in table_key:
@@ -47,4 +48,4 @@ class Rewriter(Clause):
                 json = __inner__(json, key, func)
             else:
                 json[key] = func.rewrite(json[key], table, json=source_json)
-        return format(json)
+        return format(json), table

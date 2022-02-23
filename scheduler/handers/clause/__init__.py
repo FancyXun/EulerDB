@@ -6,6 +6,7 @@ from scheduler.handers.clause.anonymous_table import AnonymousTable
 from scheduler.handers.clause.function import OrderBy
 from scheduler.handers.clause.sql_columns import SQLColumns
 from scheduler.handers.clause.sql_values import SQLValues
+from scheduler.handers.clause.sql_drop import SQLDrop
 
 clause = {
     'insert': AnonymousTable,
@@ -18,6 +19,7 @@ clause = {
     'set': SQLSet,
     'orderby': OrderBy,
     'columns': SQLColumns,
+    'drop': SQLDrop,
     'query': {'select': SQLValues}
 }
 
@@ -26,6 +28,7 @@ table_key = [
     'from',
     'select_distinct',
     'update',
-    'delete']
+    'delete',
+    'drop']
 
 

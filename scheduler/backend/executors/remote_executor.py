@@ -1,16 +1,20 @@
 import logging
 
 import mysql.connector
-from mysql.connector import Error
 
 from scheduler.handers.rewrite_hander import Rewriter
 from scheduler.backend.executors.abstract_executor import AbstractQueryExecutor
 from scheduler.compile.keywords_lists import QueryType
-from scheduler.schema.metadata import Delta
 from dbutils.pooled_db import PooledDB
+from scheduler.schema.metadata import Delta
 
 SQL_TYPES = [
-    QueryType.CREATE, QueryType.SELECT, QueryType.INSERT, QueryType.DELETE, QueryType.UPDATE
+    QueryType.CREATE,
+    QueryType.SELECT,
+    QueryType.INSERT,
+    QueryType.DELETE,
+    QueryType.UPDATE,
+    QueryType.DROP
 ]
 
 connection_pool = {}
@@ -24,6 +28,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.result = None
         self.encrypted_cols = None
         self.rewriter = None
+        self.meta = Delta()
 
     @staticmethod
     def connect_db(conn_info):
@@ -64,14 +69,15 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.encrypted_cols = encrypted_cols
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
-        enc_query = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
+        enc_query, table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
         logging.info("Encrypted sql is {}".format(enc_query))
         cursor = self.conn.cursor()
         cursor.execute(enc_query)
-        if parser.query_type == QueryType.CREATE:
+        if query_type == QueryType.CREATE:
             assert self.encrypted_cols is not None
-            Delta().save_delta()
-        elif parser.query_type == QueryType.SELECT:
+        elif query_type == QueryType.DROP:
+            self.meta.delete_delta(self.conn_info['db'], table['table'])
+        elif query_type == QueryType.SELECT:
             self.result = cursor.fetchall()
         else:
             self.conn.commit()
