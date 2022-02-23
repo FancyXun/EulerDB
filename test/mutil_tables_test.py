@@ -26,7 +26,17 @@ sql_list = {
     ['SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.age limit 10'
      .format(table, table, table1, table, table1, table, table1),
      'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.score limit 10'
-     .format(table, table, table1, table, table1, table, table1)
+     .format(table, table, table1, table, table1, table, table1),
+     'SELECT {}.id_card, {}.age, {}.age FROM {} JOIN {} ON {}.age = {}.age limit 10'
+     .format(table, table, table1, table, table1, table, table1),
+     'SELECT {}.id_card, {}.age, {}.age FROM {} LEFT JOIN {} ON {}.age = {}.age limit 10'
+     .format(table, table, table1, table, table1, table, table1),
+     'SELECT {}.id_card, {}.score, {}.score FROM {} LEFT JOIN {} ON {}.score = {}.score limit 10'
+     .format(table, table, table1, table, table1, table, table1),
+     'SELECT {}.id_card, {}.score, {}.score FROM {} RIGHT JOIN {} ON {}.score = {}.score limit 10'
+     .format(table, table, table1, table, table1, table, table1),
+     'SELECT {}.id_card, {}.age, {}.age FROM {} RIGHT JOIN {} ON {}.age = {}.age limit 10'
+     .format(table, table, table1, table, table1, table, table1),
      ]
 
 }

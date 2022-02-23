@@ -1,7 +1,7 @@
 from scheduler.handers.clause.rewriter import Rewriter
 from scheduler.handers.clause.sql_where import SQLWhere
 
-join_list = ['inner join']
+join_list = ['inner join', 'join', 'left join', 'right join']
 on_list = ['on']
 
 

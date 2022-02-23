@@ -53,10 +53,10 @@ SQL Type                    | Status     | SQL Type            | Status
 **SQL like**                 | ```DONE``` | **SQL round**       | TODO 
 **SQL in**                 | TODO       | **SQL len**         | TODO 
 **SQL between**                 | TODO       | **SQL nulls**       | TODO 
-**SQL join**                 | TODO       | **SQL now**         | TODO 
+**SQL join**                 | ```DONE```        | **SQL now**         | TODO 
 **SQL inner join**                 | ```DONE```       | **SQL first**       | TODO 
-**SQL left join**                 | TODO       | **SQL last**        | TODO 
-**SQL right join**                 | TODO       | **SQL limit**       | ```DONE``` 
+**SQL left join**                 | ```DONE```        | **SQL last**        | TODO 
+**SQL right join**                 | ```DONE```       | **SQL limit**       | ```DONE``` 
 **SQL full join**                 | TODO       | **SQL alter**       | ```DONE(not support)``` 
 **SQL union**                 | TODO       | **SQL primary key** | TODO 
 **SQL create db**                 | TODO(low)  | **SQL foreign key** | TODO 
