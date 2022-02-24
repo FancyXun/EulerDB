@@ -344,3 +344,68 @@ class QueryComponentHandler(tornado.web.RequestHandler, ABC):
             data.append(json.dumps(format_row))
         format_res["data"] = "[" + ",".join(data) + "]"
         return format_res
+
+
+class SchemaHandler(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    @run_on_executor
+    def get(self, component_id=None):
+        cx = sqlite3.connect(config['meta']['db'])
+        cu = cx.cursor()
+        cu.execute("SELECT id, name, connection_url, driver_class_name, "
+                   "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
+        db_info = cu.fetchall()
+        jdbc = db_info[0][2]
+        if jdbc[:13] == "jdbc:mysql://":
+            db = jdbc[13:].split("/")[1]
+            cu.execute(
+                "SELECT table_name, col_info FROM p_db_meta WHERE database_name='{}' order by table_name".format(db))
+            self.write(self.format_result(cu.fetchall()))
+        else:
+            self.write({})
+
+    @staticmethod
+    def format_result(tables_info):
+        res = []
+        table = {}
+        for row in tables_info:
+            format_col = {}
+            if not table:
+                table["name"] = row[0]
+                table["type"] = "USER TABLE"
+                table["columns"] = []
+            col = json.loads(row[1])
+            for key, value in col.items():
+                if value['TYPE'] == 'varchar':
+                    format_col = {
+                        "name": key,
+                        "javaType": "VARCHAR",
+                        "dbType": "VARCHAR",
+                        "length": 258
+                    }
+                elif value['TYPE'] == 'int':
+                    format_col = {
+                        "name": key,
+                        "javaType": "INTEGER",
+                        "dbType": "INT UNSIGNED",
+                        "length": 20
+                    }
+            if row[0] == table["name"]:
+                table["columns"].append(format_col)
+            else:
+                res.append(json.dumps(table))
+                table = {"name": row[0], "type": "USER TABLE", "columns": []}
+                table["columns"].append(format_col)
+        res.append(json.dumps(table))
+        return "[" + ",".join(res) + "]"
