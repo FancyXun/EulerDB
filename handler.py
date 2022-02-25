@@ -161,6 +161,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             while query[-1] == ";":
                 query = query[:-1]
             data_source_id = query_para["jdbcDataSourceId"]
+        query = query + " limit {}".format(query_para['resultLimit'])
         cx = sqlite3.connect(config['meta']['db'])
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
