@@ -70,6 +70,8 @@ class RemoteExecutor(AbstractQueryExecutor):
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
         enc_query, table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
+        if query_type == QueryType.SELECT and 'limit' in self.conn_info.keys():
+            enc_query = enc_query + self.conn_info.keys['limit']
         logging.info("Encrypted sql is {}".format(enc_query))
         cursor = self.conn.cursor()
         cursor.execute(enc_query)
