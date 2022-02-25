@@ -181,10 +181,11 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'user': user,
                 'password': password,
                 'query': query,
-                'limit': " limit {}".format(query_para['resultLimit']),
                 'port': int(port),
                 'encrypted_columns': encrypted_columns
             }
+            if 'resultLimit' in query_para.keys():
+                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
             c_e = ControllerDatabase(kwargs)
             if "create_table" not in query_para.keys():
                 res = c_e.do_query()
