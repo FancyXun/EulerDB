@@ -7,5 +7,6 @@ test_mysql.py
 
 # file
 data/meta.json
+data/schema-euler.db
 
 .DS_Store
