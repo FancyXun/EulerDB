@@ -33,7 +33,6 @@ unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 
 
 class AESCrypto(object):
-
     AES_CBC_KEY = b'a\x14\x04.\x8a\xa2a\xec,\xf1\x07\xc2l\x19|`g\xae\xba\tl\xc4\xa7\xac$\x11\xef\x0f\xeaN\x01\xcf'
     AES_CBC_IV = b'\xd3|\xf6(\xc3\x15\x08\xeaq\xc4}\xbf\xc3\x95\\{'
 
@@ -220,21 +219,29 @@ class FuzzyCipher:
         result = ""
         if raw.isalpha() or raw.isalnum() or raw.isdigit():
             assert len(raw) >= 3
-            for i in range(len(raw)-2):
-                result = result + AESCipher("points").encrypt(str(raw)[i: i+3])
+            for i in range(len(raw) - 2):
+                result = result + AESCipher("points").encrypt(str(raw)[i: i + 3])
         else:
             assert len(raw) >= 2
-            for i in range(len(raw)-1):
-                result = result + AESCipher("points").encrypt(str(raw)[i: i+2])
+            for i in range(len(raw) - 1):
+                result = result + AESCipher("points").encrypt(str(raw)[i: i + 2])
 
         return result
 
+
+# PAILLIER_N = 11214985453562592643
+# PAILLIER_P = 2670330847
+# PAILLIER_Q = 4199848669
+
+PAILLIER_N = 806267974661120203
+PAILLIER_P = 787659527
+PAILLIER_Q = 1023624989
 
 class PAILLIERCipher:
     input = 'INT'
     output = 'STRING'
 
-    def __init__(self, n=11214985453562592643, p=2670330847, q=4199848669, precision=None):
+    def __init__(self, n=PAILLIER_N, p=PAILLIER_P, q=PAILLIER_Q, precision=None):
         self.pk = paillier.PaillierPublicKey(n)
         self.sk = paillier.PaillierPrivateKey(self.pk, p, q)
         self.precision = precision

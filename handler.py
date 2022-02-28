@@ -161,6 +161,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             while query[-1] == ";":
                 query = query[:-1]
             data_source_id = query_para["jdbcDataSourceId"]
+        query = query
         cx = sqlite3.connect(config['meta']['db'])
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
@@ -183,6 +184,8 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'port': int(port),
                 'encrypted_columns': encrypted_columns
             }
+            if 'resultLimit' in query_para.keys():
+                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
             c_e = ControllerDatabase(kwargs)
             if "create_table" not in query_para.keys():
                 res = c_e.do_query()
