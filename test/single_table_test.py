@@ -7,7 +7,7 @@ import unittest
 db_host = '127.0.0.1'
 db = 'points'
 user = 'root'
-password = 'root'
+password = 'mysqlxia123'
 port = 3306
 
 content = {
@@ -17,7 +17,7 @@ content = {
 }
 
 
-table = 'test'
+table = 'testlla'
 
 
 sql_list = {
@@ -28,9 +28,11 @@ sql_list = {
          'select id_card, name, age from {} where age > 40 limit 100'.format(table),
          'select id_card, name, age from {} where age < 10 limit 100'.format(table),
          'select id_card, name, age from {} where age <= 10 limit 100'.format(table),
+         'select id_card, name, age, score from {} where score > 70 limit 100'.format(table),
          ],
     'order_by_min_max':
         ['select * from {} where id_card = "496715970993917044442778" and name = "iezlcpnjws"'.format(table),
+         'select * from {} where id_card = "945640842494270259913766" or name = "tlpkiarvng"'.format(table),
          'select id_card, name, age from {} order by age limit 5'.format(table),
          'select distinct id_card, name, age from {} limit 5'.format(table),
          'select distinct age, name, id_card from {} limit 1000'.format(table),
@@ -39,10 +41,12 @@ sql_list = {
          'select max(score), min(score) from {} '.format(table),
          'select sum(score), avg(score) from {} '.format(table),
          'select avg(age), sum(age), count(*) from {} '.format(table),
-         'select sum(age) from {} '.format(table)
+         'select sum(age) from {} '.format(table),
+         'select max(score), min(age) from {} '.format(table)
          ],
     'like':
-        ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table)],
+        ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table),
+         'select id_card, name, nick_name from {} where nick_name like "%fpb%" limit 5'.format(table),],
     'count':
         ['select count(*) from {}'.format(table)],
     'delete':
@@ -80,12 +84,19 @@ class TestPostHandler(TestCase):
         content['encrypted_columns'] = encrypted_columns
 
         json_data = json.dumps(content)
+        print(json_data)
         resp = requests.post('http://localhost:8888/query', json_data)
         content.pop('encrypted_columns')
         print(resp.json()['result'])
 
+    def test_drop_table(self):
+        sql = 'drop table {}'.format(table)
+        content['query'] = sql
+        json_data = json.dumps(content)
+        resp = requests.post('http://localhost:8888/query', json_data)
+
     def test_handler_insert_table(self):
-        for i in range(10000):
+        for i in range(10):
             query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + str(
                 random.randint(1000000000000000000, 1000000000000000000000000)) + '","' + ''.join(
                 random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
@@ -114,13 +125,14 @@ class TestPostHandler(TestCase):
 class TestRewriterHandler(TestCase):
 
     def test_select_rewrite(self):
-        sql = {
-            'query': 'select id_card, name, age from test where age = 20 limit 5',
-            'db': db
-        }
-        json_data = json.dumps(sql)
-        resp = requests.post('http://localhost:8888/rewrite_query', json_data)
-        print(resp.text)
+        pass
+        # sql = {
+        #     'query': f'select id_card, name, age from {table} where age = 20 limit 5',
+        #     'db': db
+        # }
+        # json_data = json.dumps(sql)
+        # resp = requests.post('http://localhost:8888/rewrite_query', json_data)
+        # print(resp.text)
 
 
 if __name__ == "__main__":

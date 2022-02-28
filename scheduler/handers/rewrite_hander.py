@@ -1,277 +1,55 @@
-import time
-import hashlib
-import collections
+import copy
 
 from sql_parsing import parse_mysql as parse
 from sql_parsing import format
+
+from scheduler.handers.table import rewrite_table
+from scheduler.handers.clause.sql_clause import Clause
+from scheduler.handers.clause import clause
+from scheduler.handers.clause import table_key
+
 from scheduler.schema.metadata import Delta
-from scheduler.schema.metadata import \
-    CIPHERS_META, \
-    FUNC_CIPHERS, \
-    ENCRYPT_SQL_TYPE, \
-    FUZZY_TYPE, \
-    ARITHMETIC_TYPE
-from phe import paillier
-
-from scheduler.utils.keywords import SELECT_STATEMENTS, MODIFY_STATEMENTS
 
 
-class Rewriter(object):
+class Rewriter(Clause):
     def __init__(self, db, encrypted_cols=None):
-        self.db = db
-        self.db_meta = {}
-        self.encrypted_cols = encrypted_cols
-        if db in Delta().meta.keys():
-            self.db_meta = Delta().meta[db]
-        self.select_state = []
-        self.select_columns = collections.OrderedDict()
+        super().__init__(db, encrypted_cols)
 
     def rewrite_query(self, query):
         """
 
         """
+        table = None
+        self.origin_query = query
         if self.encrypted_cols:
-            return self.rewrite_table(query)
-        result = self.encrypt_items(parse(query))
-        return format(result)
-
-    def encrypt_items(self, json):
-        """
-        insert:
-        {'columns': ['id', 'name', 'age', 'sex', 'score', 'nick_name', 'comment'],
-        'query': {
-            'select': [{'value': 6190}, {'value': {'literal': 'cmjbh'}}, {'value': 19}, {'value': {'literal': 'm'}},
-                       {'value': 86}, {'value': {'literal': 'kmswhvibct'}},
-                       {'value': {'literal': 'bmadwsfkshtshjbfgghurgigplgvsg'}}]},
-        'insert': 'user'}
-        select:
-            {'select': '*', 'from': 'user'}
-            {'select': [{'value': 'id'}, {'value': 'name'}], 'from': 'user', 'limit': 10}
-        """
-        if 'insert' in json.keys():
-            insert_table = json['insert']
-            enc_table_meta = self.db_meta[insert_table]
-            json['insert'] = enc_table_meta['anonymous']
-            if 'columns' in json.keys():
-                columns = json['columns']
-                new_columns = []
-                for col in columns:
-                    if enc_table_meta['columns'][col]['PLAINTEXT']:
-                        new_columns.append(col)
-                    else:
-                        new_columns.extend(
-                            list(enc_table_meta['columns'][col]['ENC_COLUMNS'].values()))
-                json['columns'] = new_columns
-                if 'query' in json.keys():
-                    values = json['query']['select']
-                    new_values = []
-                    for col, value in zip(columns, values):
-                        if enc_table_meta['columns'][col]['PLAINTEXT']:
-                            new_values.append(value)
-                        else:
-                            for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].keys():
-                                new_values.append(self.encrypt_value(value['value'], enc, enc_table_meta))
-                    json['query']['select'] = new_values
-        for keyword in SELECT_STATEMENTS:
-            if keyword in json.keys():
-                if 'from' in json.keys():
-                    select_table = json['from']
-                    CIPHERS_META.update(Delta.add_ciphers_meta(self.db_meta[select_table]))
-                    json[keyword] = self.rewrite_select_items(json[keyword], select_table)
-                    json['from'] = self.db_meta[select_table]['anonymous']
-                    if 'where' in json.keys():
-                        json['where'] = self.rewrite_where(json['where'], select_table)
-                    if 'orderby' in json.keys():
-                        json['orderby'] = self.rewrite_orderby(json['orderby'], select_table)
-                    Delta.table_json = json
-        for keyword in MODIFY_STATEMENTS:
-            if keyword in json.keys():
-                modify_table = json[keyword]
-                json[keyword] = self.db_meta[modify_table]['anonymous']
-                if 'where' in json.keys():
-                    json['where'] = self.rewrite_where(json['where'], modify_table)
-                if 'set' in json.keys():
-                    json['set'] = self.rewrite_set(json['set'], modify_table)
-        return json
-
-    @staticmethod
-    def encrypt_value(value, enc, enc_table_meta=None):
-        CIPHERS_META.update(Delta.add_ciphers_meta(enc_table_meta))
-        if isinstance(value, int):
-            if CIPHERS_META[enc].output == 'INT':
-                return {'value': CIPHERS_META[enc].encrypt(int(value))}
-            else:
-                return {'value': {'literal': CIPHERS_META[enc].encrypt(str(value))}}
-        elif isinstance(value, dict):
-            return {
-                'value':
-                    {'literal': CIPHERS_META[enc].encrypt(str(value['literal']))}}
-        else:
-            raise Exception("Bad value in json {}".format(value))
-
-    def rewrite_where(self, json, table, cipher='SYMMETRIC'):
-        columns_meta = self.db_meta[table]['columns']
-        if isinstance(json, dict):
-            for k, v in json.items():
-                if k == 'eq':
-                    if not columns_meta[v[0]]['PLAINTEXT']:
-                        return {'eq': [columns_meta[v[0]]['ENC_COLUMNS']["SYMMETRIC"],
-                                       self.rewrite_where(v[1], table)]}
-                if k in ['gt', 'lt', 'gte', 'lte']:
-                    if not columns_meta[v[0]]['PLAINTEXT']:
-                        if columns_meta[v[0]]['TYPE'] == 'int':
-                            return {k: [columns_meta[v[0]]['ENC_COLUMNS']["OPE"],
-                                           self.rewrite_where(v[1], table, 'OPE')]}
-                if k == 'like':
-                    if not columns_meta[v[0]]['PLAINTEXT']:
-                        return {
-                            'like': [columns_meta[v[0]]['ENC_COLUMNS']["FUZZY"],
-                                     self.rewrite_where(v[1], table, 'FUZZY')]
-                        }
-                if k == 'and':
-                    return {'and': [self.rewrite_where(a_v, table, cipher) for a_v in v]}
-                if k == 'literal':
-                    return {'literal': self.rewrite_where(v, table, cipher)}
-        if isinstance(json, int):
-            if cipher == 'FUZZY':
-                partial_list = str(json).split("%")
-                result = []
-                for partial in partial_list:
-                    if partial == "":
-                        result.append("")
-                        continue
-                    else:
-                        result.append(CIPHERS_META[cipher].encrypt(str(partial)))
-                return "%".join(result)
-            return CIPHERS_META[cipher].encrypt(str(json))
-        if isinstance(json, str):
-            if cipher == 'FUZZY':
-                partial_list = json.split("%")
-                result = []
-                for partial in partial_list:
-                    if partial == "":
-                        result.append("")
-                        continue
-                    else:
-                        result.append(CIPHERS_META[cipher].encrypt(partial))
-                return "%".join(result)
-            return CIPHERS_META[cipher].encrypt(json)
-        return json
-
-    def rewrite_set(self, json, table):
-        result = {}
-        enc_table_meta = self.db_meta[table]
-        for k, v in json.items():
-            if enc_table_meta['columns'][k]['PLAINTEXT']:
-                result[k] = v
-            else:
-                for k1, v1 in enc_table_meta['columns'][k]['ENC_COLUMNS'].items():
-                    result[v1] = self.rewrite_where(v, table, k1)
-        return result
-
-    def rewrite_select_items(self, json, table, cipher='SYMMETRIC'):
-        if json == "*":
-            result = []
-            for idx, (k, v) in enumerate(self.db_meta[table]['columns'].items()):
-                if v['PLAINTEXT']:
-                    result.append(k)
-                    self.select_state.append("PLAINTEXT")
-                else:
-                    result.append(v['ENC_COLUMNS'][cipher])
-                    self.select_state.append(cipher)
-                self.select_columns[k] = v['TYPE']
-            return result
-        if json == {'count': '*'}:
-            self.select_state.append("PLAINTEXT")
-            self.select_columns["count"] = "int"
-            return json
-        if isinstance(json, list):
-            return [self.rewrite_select_items(v['value'], table) for v in json]
-        if isinstance(json, str):
-            col = self.db_meta[table]['columns'][json]
-            self.select_columns[json] = col['TYPE']
-            if col['PLAINTEXT']:
-                self.select_state.append("PLAINTEXT")
-                return json
-            else:
-                self.select_state.append(cipher)
-                return col['ENC_COLUMNS'][cipher]
-        if isinstance(json, dict):
-            result = {}
-            for k, v in json.items():
-                if k in FUNC_CIPHERS.keys():
-                    result[k] = self.rewrite_select_items(v, table, FUNC_CIPHERS[k])
-                else:
-                    result[k] = self.rewrite_select_items(v, table)
-            return result
-
-    def get_cipher_columns(self):
-        pass
-
-    def rewrite_orderby(self, json, table):
-        col = self.db_meta[table]['columns'][json['value']]
-        if col['PLAINTEXT']:
-            return json
-        else:
-            return {'value': col['ENC_COLUMNS']['OPE']}
-
-    def rewrite_table(self, query):
+            return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols), table
         json = parse(query)
-        if 'create table' not in json.keys():
-            raise Exception("Bad create table query: {}".format(query))
-        create_table = json['create table']
-        table_name = create_table['name']
-        if table_name in self.db_meta.keys():
-            raise Exception("Table {} already exists".format(table_name))
-        columns = create_table['columns']
-        enc_columns = []
-        columns_kv = {}
-        for col in columns:
-            col_name = col['name']
-            col_type = col['type']
-            columns_kv[col_name] = {}
-            columns_kv[col_name]['ENC_COLUMNS'] = {}
-            if col['name'] not in self.encrypted_cols:
-                for t_k, t_v in col_type.items():
-                    if t_v:
-                        enc_col_type = t_k + '(' + str(t_v) + ')'
-                    else:
-                        enc_col_type = t_k
-                    enc_columns.append(col_name + ' ' + enc_col_type)
-                    columns_kv[col_name]['PLAINTEXT'] = True
-                    columns_kv[col_name]['TYPE'] = t_k
+        source_json = copy.deepcopy(json)
+        for key in table_key:
+            if key in json.keys():
+                table = json[key]
+                break
+        else:
+            raise Exception("no table found in sql {}".format(self.origin_query))
+
+        def __inner__(inner_json, inner_key, _func):
+            if isinstance(inner_json, dict):
+                if isinstance(inner_json[inner_key], dict):
+                    for _k, _v in inner_json[inner_key].items():
+                        tmp = __inner__(_v, _k, _func)
+                        inner_json[inner_key][_k] = tmp
+                    return inner_json
+            else:
+                return func[inner_key].rewrite(inner_json, table, json=source_json)
+
+        for key in clause.keys():
+            if key not in json.keys():
                 continue
-            val = ENCRYPT_SQL_TYPE.get(list(col['type'].keys())[0].upper())
-            for k, v in val.items():
-                enc_col_name = col_name.upper() + k
-                for t_k, t_v in col_type.items():
-                    columns_kv[col_name]['TYPE'] = t_k
-                    if t_v:
-                        enc_col_type = t_k + '(' + str(t_v * v) + ')'
-                    else:
-                        enc_col_type = v
-                    enc_columns.append(enc_col_name + ' ' + enc_col_type)
-                    columns_kv[col_name]['ENC_COLUMNS'].update({k: enc_col_name})
-            if self.encrypted_cols[col['name']]['fuzzy']:
-                enc_col_name = col_name.upper() + 'FUZZY'
-                enc_columns.append(enc_col_name + ' ' + FUZZY_TYPE)
-                columns_kv[col_name]['ENC_COLUMNS'].update({"FUZZY": enc_col_name})
-            if self.encrypted_cols[col['name']]['arithmetic']:
-                enc_col_name = col_name.upper() + 'ARITHMETIC'
-                enc_columns.append(enc_col_name + ' ' + ARITHMETIC_TYPE)
-                columns_kv[col_name]['ENC_COLUMNS'].update({"ARITHMETIC": enc_col_name})
-            columns_kv[col_name]['PLAINTEXT'] = False
-        anonymous_table = "TABEL_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
-        query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + ');'
-        pk, sk = paillier.generate_paillier_keypair(n_length=64)
-        table_meta = {
-            table_name: {
-                'anonymous': anonymous_table,
-                'columns': columns_kv,
-                'paillier public key': [str(pk.n), str(pk.nsquare)],
-                'Paillier private key': [str(sk.p), str(sk.q)],
-                'precision': None
-            }
-        }
-        Delta().update_delta(self.db, table_meta)
-        return query
+            func = self.__getattribute__(key)
+            if isinstance(func, dict):
+                json = __inner__(json, key, func)
+            else:
+                json[key] = func.rewrite(json[key], table, json=source_json)
+        # record json in Delta
+        Delta.table_json = json
+        return format(json), table

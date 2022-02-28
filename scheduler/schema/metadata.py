@@ -1,10 +1,16 @@
+import re
 import json
-import os
+import yaml
+import sqlite3
+from copy import deepcopy
 
 from scheduler.crypto import encrypt
-from sql_parsing import parse
+from sql_parsing import parse_mysql as parse
+from sql_parsing import format
 
-META_PATH = 'data/meta.json'
+with open("config.yaml", 'r', encoding='utf-8') as f:
+    cfg = f.read()
+    config = yaml.full_load(cfg)
 
 ENCRYPT_SQL_TYPE = {
     "INT":
@@ -30,7 +36,8 @@ CIPHERS = {
 CIPHERS_META = {
     "OPE": encrypt.OPECipher(),
     "SYMMETRIC": encrypt.AESCipher("points"),
-    "FUZZY": encrypt.FuzzyCipher()
+    "FUZZY": encrypt.FuzzyCipher(),
+    "ARITHMETIC": encrypt.PAILLIERCipher()
 }
 
 FUNC_CIPHERS = {
@@ -45,10 +52,12 @@ class Delta(object):
     __instance = None
     meta = None
     table_json = None
+    cx = None
 
     def __new__(cls, *args, **kwargs):
         if Delta.__instance is None:
             Delta.__instance = object.__new__(cls, *args, **kwargs)
+            cls.cx = sqlite3.connect(config['meta']['db'], check_same_thread=False)
             cls.meta = cls.load_delta()
         return Delta.__instance
 
@@ -63,21 +72,48 @@ class Delta(object):
             self.meta = {
                 db_name: table_meta
             }
+        # update database meta
+        self.update_db_meta(db_name, table_meta)
         return self.meta
 
-    def delete_delta(self):
-        pass
+    def delete_delta(self, db, table):
+        self.meta[db].pop(table, None)
+        cu = self.cx.cursor()
+        sql = "delete from p_db_meta where database_name = '{}' and table_name = '{}'".format(db, table)
+        cu.execute(sql)
+        cu.connection.commit()
 
-    def save_delta(self):
-        with open(META_PATH, "w") as f:
-            json.dump(self.meta, f)
+    def update_db_meta(self, db_name, table_meta):
+        cu = self.cx.cursor()
+        rows = []
+        for t_name, t_value in table_meta.items():
+            table_name = t_name
+            table_anonymous = t_value['anonymous']
+            for key, value in t_value['columns'].items():
+                col_str = json.dumps({key: value})
+                rows.append((db_name, 'mysql', table_name, table_anonymous, col_str, ''))
+        cu.executemany('insert into p_db_meta values (?,?,?,?,?,?)', rows)
+        cu.connection.commit()
 
-    @staticmethod
-    def load_delta():
-        if not os.path.exists(META_PATH):
-            return {}
-        with open(META_PATH, "r") as f:
-            meta = json.load(f)
+    @classmethod
+    def load_delta(cls):
+        meta = {}
+        cu = cls.cx.cursor()
+        cu.execute("select * from p_db_meta")
+        db_meta = cu.fetchall()
+        if not db_meta:
+            return meta
+        for row in db_meta:
+            db_name, table_name, table_anonymous, col_info = row[0], row[2], row[3], row[4]
+            if db_name not in meta.keys():
+                meta[db_name] = {}
+            if table_name not in meta[db_name].keys():
+                meta[db_name][table_name] = {}
+            if 'anonymous' not in meta[db_name][table_name].keys():
+                meta[db_name][table_name]['anonymous'] = table_anonymous
+            if 'columns' not in meta[db_name][table_name].keys():
+                meta[db_name][table_name]['columns'] = {}
+            meta[db_name][table_name]['columns'].update(json.loads(col_info))
         return meta
 
     @staticmethod
@@ -93,8 +129,8 @@ class Delta(object):
         return {}
 
     @staticmethod
-    def create_paillier_sum_procedure(cursor, feature_name, table_name, mini):
-        if not mini:
+    def create_paillier_sum_procedure(cursor, feature_name, table_name, use_cursor):
+        if not use_cursor:
             set_concat_length_global_query = 'SET GLOBAL group_concat_max_len = 18446744073709551615'
             set_concat_length_session_query = 'SET SESSION group_concat_max_len = 18446744073709551615'
             cursor.execute(set_concat_length_global_query)
@@ -103,8 +139,8 @@ class Delta(object):
         n_square = CIPHERS_META['ARITHMETIC'].pk.nsquare
         drop_procedure = "drop procedure if exists paillierSum"
         cursor.execute(drop_procedure)
-        create_procedure = f"CREATE PROCEDURE `paillierSum`(IN nSquare bigint, OUT sum{feature_name} bigint, OUT num{feature_name} int)" \
-                         f"BEGIN DECLARE done BOOLEAN DEFAULT 0; DECLARE o bigint; DECLARE enc_data CURSOR FOR SELECT {feature_name} from {table_name};DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;set sum{feature_name}=1;set num{feature_name}=0;OPEN enc_data;fetch_loop: LOOP FETCH enc_data INTO o;IF done THEN LEAVE fetch_loop; END IF; set sum{feature_name} = (sum{feature_name}*o)%nSquare; set num{feature_name}= num{feature_name}+1; END LOOP; CLOSE enc_data;" \
+        create_procedure = f"CREATE PROCEDURE `paillierSum`(IN nSquare DECIMAL(65,0), OUT sum{feature_name} DECIMAL(65,0), OUT num{feature_name} DECIMAL(65,0))" \
+                         f"BEGIN DECLARE done BOOLEAN DEFAULT 0; DECLARE o DECIMAL(65,0); DECLARE enc_data CURSOR FOR SELECT {feature_name} from {table_name};DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;set sum{feature_name}=1;set num{feature_name}=0;OPEN enc_data;fetch_loop: LOOP FETCH enc_data INTO o;IF done THEN LEAVE fetch_loop; END IF; set sum{feature_name} = (sum{feature_name}*o)%nSquare; set num{feature_name}= num{feature_name}+1; END LOOP; CLOSE enc_data;" \
                          "END"
         cursor.execute(create_procedure)
         # n_square = '2213984809'
@@ -113,17 +149,15 @@ class Delta(object):
         cursor.execute(set_query)
         cursor.execute(call_query)
 
-    @staticmethod
-    def get_paillier_n_square(origin_query, db):
-        origin_table = parse(origin_query)['from']
-        table_meta = Delta.load_delta()[db][origin_table]
-        return table_meta["paillier public key"][1]
-
     @classmethod
-    def get_paillier_procedure_info(cls):
+    def get_paillier_procedure_info(cls, enc_query):
         sum_feature_name_list = []
         avg_feature_name_list = []
-        json = cls.table_json
+        if cls.table_json:
+            json = deepcopy(cls.table_json)
+        else:
+            json = parse(enc_query)
+        json.pop('limit', None)
         json_select = json['select']
         if not isinstance(json_select, list):
             json_select = [json_select['value']]
@@ -137,17 +171,19 @@ class Delta(object):
                 except:
                     pass
         need_paillier_procedure = len(sum_feature_name_list) + len(avg_feature_name_list)
-        return sum_feature_name_list, avg_feature_name_list, need_paillier_procedure
+        enc_query = format(json)
+        table_name = enc_query[re.search('FROM ', enc_query).span()[1]:]
+        return sum_feature_name_list, avg_feature_name_list, need_paillier_procedure, table_name, enc_query
 
     @staticmethod
-    def modify_sum_query(enc_query, feature_name, mini):
-        if not mini:
+    def modify_sum_query(enc_query, feature_name, use_cursor):
+        if not use_cursor:
             return enc_query.replace('SUM({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',SUM')".format(feature_name))
         return enc_query.replace('SUM({})'.format(feature_name), '@sum{}'.format(feature_name))
 
     @staticmethod
-    def modify_avg_query(enc_query, feature_name, mini):
-        if not mini:
+    def modify_avg_query(enc_query, feature_name, use_cursor):
+        if not use_cursor:
             return enc_query.replace('AVG({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',AVG')".format(feature_name))
         return enc_query.replace('AVG({})'.format(feature_name), "concat(@sum{}, ',',@num{})".format(feature_name,
                                                                                                      feature_name))

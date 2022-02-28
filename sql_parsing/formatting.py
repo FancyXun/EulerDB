@@ -169,6 +169,8 @@ class Formatter:
         if isinstance(json, dict):
             if len(json) == 0:
                 return ""
+            elif "drop" in json:
+                return self.drop(json)
             elif "value" in json:
                 return self.value(json, prec)
             elif "join" in json:
@@ -623,6 +625,14 @@ class Formatter:
             if "if exists" in json:
                 acc.append("IF EXISTS")
             acc.append(self.dispatch(json["query"]))
+        return " ".join(acc)
+
+    def drop(self, json, prec=precedence["from"]):
+        acc = ["DROP"]
+        values = json['drop']
+        if 'table' in values:
+            acc.append("TABLE")
+            acc.append(values['table'])
         return " ".join(acc)
 
 

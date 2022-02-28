@@ -6,7 +6,7 @@ from tornado.web import URLSpec
 from tornado.ioloop import IOLoop
 
 
-from handler import PostHandler, RewriteHandler, QueryHandler, QueryComponentHandler
+from handler import PostHandler, RewriteHandler, QueryHandler, QueryComponentHandler, SchemaHandler
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -20,7 +20,9 @@ HANDLERS = [
     URLSpec(r'/jdbc_query', QueryHandler,
             name=QueryHandler.__name__),
     URLSpec(r'/jdbc_query/component/?([?P<component_id>\w])?', QueryComponentHandler,
-            name=QueryHandler.__name__)
+            name=QueryComponentHandler.__name__),
+    URLSpec(r'/jdbc_query/schema/?([?P<component_id>\w])?', SchemaHandler,
+            name=SchemaHandler.__name__)
 ]
 
 if __name__ == '__main__':

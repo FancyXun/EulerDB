@@ -234,7 +234,7 @@ class PAILLIERCipher:
     input = 'INT'
     output = 'STRING'
 
-    def __init__(self, n, p, q, precision=None):
+    def __init__(self, n=11214985453562592643, p=2670330847, q=4199848669, precision=None):
         self.pk = paillier.PaillierPublicKey(n)
         self.sk = paillier.PaillierPrivateKey(self.pk, p, q)
         self.precision = precision
@@ -243,7 +243,7 @@ class PAILLIERCipher:
         return str(self.pk.encrypt(int(raw), self.precision).ciphertext(False))
 
     def decrypt(self, enc):
-        enc_list = enc.split(',')
+        enc_list = str(enc).split(',')
         enc_value_list, agg_type = enc_list[:-1], enc_list[-1]
         print(agg_type)
         n_square = self.pk.nsquare

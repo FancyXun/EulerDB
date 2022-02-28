@@ -29,7 +29,7 @@ $ python service.py
 
 ### Test
 ```shell script
-$ python handler_test.py
+$ python single_table_test.py
 ```
 
 ## Sql-editor
@@ -42,8 +42,8 @@ $ python handler_test.py
 SQL Type                    | Status     | SQL Type            | Status                                                                                                                                           
 ----------------------------- |------------|---------------------| --------------
 **SQL select**                 | ```DONE``` | **SQL unique**      | TODO(low) 
-**SQL distinct**                 | ```DONE``` | **SQL drop**        | TODO 
-**SQL where**                 | ```DONE``` | **SQL avg**         | ```DONE``` 
+**SQL distinct**                 | ```DONE``` | **SQL drop**        | ```DONE``` 
+**SQL where**                 | ```DONE``` | **SQL avg**         | ```DONE```
 **SQL and & or**                | ```DONE``` | **SQL count**       | ```DONE``` 
 **SQL order by**               | ```DONE``` | **SQL max**         | ```DONE```
 **SQL insert**               | ```DONE``` | **SQL min**         | ```DONE``` 
@@ -53,10 +53,10 @@ SQL Type                    | Status     | SQL Type            | Status
 **SQL like**                 | ```DONE``` | **SQL round**       | TODO 
 **SQL in**                 | TODO       | **SQL len**         | TODO 
 **SQL between**                 | TODO       | **SQL nulls**       | TODO 
-**SQL join**                 | TODO       | **SQL now**         | TODO 
-**SQL inner join**                 | TODO       | **SQL first**       | TODO 
-**SQL left join**                 | TODO       | **SQL last**        | TODO 
-**SQL right join**                 | TODO       | **SQL limit**       | ```DONE``` 
+**SQL join**                 | ```DONE```        | **SQL now**         | TODO 
+**SQL inner join**                 | ```DONE```       | **SQL first**       | TODO 
+**SQL left join**                 | ```DONE```        | **SQL last**        | TODO 
+**SQL right join**                 | ```DONE```       | **SQL limit**       | ```DONE``` 
 **SQL full join**                 | TODO       | **SQL alter**       | ```DONE(not support)``` 
 **SQL union**                 | TODO       | **SQL primary key** | TODO 
 **SQL create db**                 | TODO(low)  | **SQL foreign key** | TODO 
