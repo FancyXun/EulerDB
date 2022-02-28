@@ -139,13 +139,14 @@ class Delta(object):
         n_square = CIPHERS_META['ARITHMETIC'].pk.nsquare
         drop_procedure = "drop procedure if exists paillierSum"
         cursor.execute(drop_procedure)
-        create_procedure = f"CREATE PROCEDURE `paillierSum`(IN nSquare DECIMAL(65,0), OUT sum{feature_name} DECIMAL(65,0), OUT num{feature_name} DECIMAL(65,0))" \
-                         f"BEGIN DECLARE done BOOLEAN DEFAULT 0; DECLARE o DECIMAL(65,0); DECLARE enc_data CURSOR FOR SELECT {feature_name} from {table_name};DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;set sum{feature_name}=1;set num{feature_name}=0;OPEN enc_data;fetch_loop: LOOP FETCH enc_data INTO o;IF done THEN LEAVE fetch_loop; END IF; set sum{feature_name} = (sum{feature_name}*o)%nSquare; set num{feature_name}= num{feature_name}+1; END LOOP; CLOSE enc_data;" \
+        new_feature_name = feature_name.replace('.', '_')
+        create_procedure = f"CREATE PROCEDURE `paillierSum`(IN nSquare DECIMAL(65,0), OUT sum{new_feature_name} DECIMAL(65,0), OUT num{new_feature_name} DECIMAL(65,0))" \
+                         f"BEGIN DECLARE done BOOLEAN DEFAULT 0; DECLARE o DECIMAL(65,0); DECLARE enc_data CURSOR FOR SELECT {feature_name} from {table_name};DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;set sum{new_feature_name}=1;set num{new_feature_name}=0;OPEN enc_data;fetch_loop: LOOP FETCH enc_data INTO o;IF done THEN LEAVE fetch_loop; END IF; set sum{new_feature_name} = (sum{new_feature_name}*o)%nSquare; set num{new_feature_name}= num{new_feature_name}+1; END LOOP; CLOSE enc_data;" \
                          "END"
         cursor.execute(create_procedure)
         # n_square = '2213984809'
         set_query = "SET @nSquare = {};".format(n_square)
-        call_query = "CALL `paillierSum`(@nSquare, @sum{}, @num{});".format(feature_name, feature_name)
+        call_query = "CALL `paillierSum`(@nSquare, @sum{}, @num{});".format(new_feature_name, new_feature_name)
         cursor.execute(set_query)
         cursor.execute(call_query)
 
@@ -179,13 +180,15 @@ class Delta(object):
 
     @staticmethod
     def modify_sum_query(enc_query, feature_name, use_cursor):
+        new_feature_name = feature_name.replace('.', '_')
         if not use_cursor:
-            return enc_query.replace('SUM({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',SUM')".format(feature_name))
-        return enc_query.replace('SUM({})'.format(feature_name), '@sum{}'.format(feature_name))
+            return enc_query.replace('SUM({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',SUM')".format(new_feature_name))
+        return enc_query.replace('SUM({})'.format(feature_name), '@sum{}'.format(new_feature_name))
 
     @staticmethod
     def modify_avg_query(enc_query, feature_name, use_cursor):
+        new_feature_name = feature_name.replace('.', '_')
         if not use_cursor:
-            return enc_query.replace('AVG({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',AVG')".format(feature_name))
-        return enc_query.replace('AVG({})'.format(feature_name), "concat(@sum{}, ',',@num{})".format(feature_name,
-                                                                                                     feature_name))
+            return enc_query.replace('AVG({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',AVG')".format(new_feature_name))
+        return enc_query.replace('AVG({})'.format(feature_name), "concat(@sum{}, ',',@num{})".format(new_feature_name,
+                                                                                                     new_feature_name))
