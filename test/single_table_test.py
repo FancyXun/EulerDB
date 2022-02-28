@@ -7,7 +7,7 @@ import unittest
 db_host = '127.0.0.1'
 db = 'points'
 user = 'root'
-password = 'mysqlxia123'
+password = 'root'
 port = 3306
 
 content = {
@@ -17,7 +17,7 @@ content = {
 }
 
 
-table = 'testlla'
+table = 'test'
 
 
 sql_list = {
@@ -125,14 +125,13 @@ class TestPostHandler(TestCase):
 class TestRewriterHandler(TestCase):
 
     def test_select_rewrite(self):
-        pass
-        # sql = {
-        #     'query': f'select id_card, name, age from {table} where age = 20 limit 5',
-        #     'db': db
-        # }
-        # json_data = json.dumps(sql)
-        # resp = requests.post('http://localhost:8888/rewrite_query', json_data)
-        # print(resp.text)
+        sql = {
+            'query': f'select id_card, name, age from {table} where age = 20 limit 5',
+            'db': db
+        }
+        json_data = json.dumps(sql)
+        resp = requests.post('http://localhost:8888/rewrite_query', json_data)
+        print(resp.text)
 
 
 if __name__ == "__main__":
