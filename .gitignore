@@ -7,3 +7,5 @@ test_mysql.py
 
 # file
 data/meta.json
+
+.DS_Store
