@@ -171,8 +171,10 @@ class Delta(object):
                 except:
                     pass
         need_paillier_procedure = len(sum_feature_name_list) + len(avg_feature_name_list)
-        enc_query = format(json)
-        table_name = enc_query[re.search('FROM ', enc_query).span()[1]:]
+        table_name = None
+        if need_paillier_procedure:
+            enc_query = format(json)
+            table_name = enc_query[re.search('FROM ', enc_query).span()[1]:]
         return sum_feature_name_list, avg_feature_name_list, need_paillier_procedure, table_name, enc_query
 
     @staticmethod
