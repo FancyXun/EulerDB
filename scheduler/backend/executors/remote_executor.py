@@ -40,7 +40,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                 mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
                 passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
             connection_pool[db_key] = connection
-            print("mysql connected from {}" .format(db_key))
+            logging.info("mysql connected from {}" .format(db_key))
         else:
             connection = connection_pool[db_key]
         return connection.connection()

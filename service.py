@@ -1,5 +1,4 @@
 import logging
-import yaml
 
 import tornado.web
 from tornado.web import URLSpec

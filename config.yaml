@@ -1,2 +1,8 @@
 meta:
-    db: "/Users/fancyxun/code/points/EulerDB/data/schema-euler.db"
+    type: "mysql"
+    sqlite: "/Users/fancyxun/code/points/EulerDB/data/schema-euler.db"
+    mysql:
+        host: "127.0.0.1"
+        db: "eulerdb_schema"
+        user: "root"
+        passwd: "root"

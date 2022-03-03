@@ -1,12 +1,24 @@
 import json
 import yaml
 import sqlite3
+import mysql.connector
 
 from scheduler.crypto import encrypt
 
 with open("config.yaml", 'r', encoding='utf-8') as f:
     cfg = f.read()
     config = yaml.full_load(cfg)
+    if config['meta']['type'] == 'mysql':
+        cx = mysql.connector.connect(
+              host=config['meta']['mysql']["host"],
+              database=config['meta']['mysql']["db"],
+              user=config['meta']['mysql']["user"],
+              passwd=config['meta']['mysql']["passwd"]
+            )
+        insert_sql = 'insert into p_db_meta values(%s,%s,%s,%s,%s,%s)'
+    else:
+        cx = sqlite3.connect(config['meta']['sqlite'], check_same_thread=False)
+        insert_sql = 'insert into p_db_meta values (?,?,?,?,?,?)'
 
 ENCRYPT_SQL_TYPE = {
     "INT":
@@ -47,7 +59,7 @@ class Delta(object):
     def __new__(cls, *args, **kwargs):
         if Delta.__instance is None:
             Delta.__instance = object.__new__(cls, *args, **kwargs)
-            cls.cx = sqlite3.connect(config['meta']['db'], check_same_thread=False)
+            cls.cx = cx
             cls.meta = cls.load_delta()
         return Delta.__instance
 
@@ -71,7 +83,10 @@ class Delta(object):
         cu = self.cx.cursor()
         sql = "delete from p_db_meta where database_name = '{}' and table_name = '{}'".format(db, table)
         cu.execute(sql)
-        cu.connection.commit()
+        if config['meta']['type'] == 'mysql':
+            self.cx.commit()
+        else:
+            cu.connection.commit()
 
     def update_db_meta(self, db_name, table_meta):
         cu = self.cx.cursor()
@@ -82,8 +97,11 @@ class Delta(object):
             for key, value in t_value['columns'].items():
                 col_str = json.dumps({key: value})
                 rows.append((db_name, 'mysql', table_name, table_anonymous, col_str, ''))
-        cu.executemany('insert into p_db_meta values (?,?,?,?,?,?)', rows)
-        cu.connection.commit()
+        cu.executemany(insert_sql, rows)
+        if config['meta']['type'] == 'mysql':
+            self.cx.commit()
+        else:
+            cu.connection.commit()
 
     @classmethod
     def load_delta(cls):
