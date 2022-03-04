@@ -60,4 +60,4 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
         }
     }
     Delta().update_delta(db, table_meta)
-    return query
+    return query, {'table': table_name}

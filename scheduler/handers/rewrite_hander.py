@@ -20,7 +20,7 @@ class Rewriter(Clause):
         table = None
         self.origin_query = query
         if self.encrypted_cols:
-            return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols), table
+            return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols)
         json = parse(query)
         source_json = copy.deepcopy(json)
         for key in table_key:

@@ -27,7 +27,8 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
               host=config['meta']['mysql']["host"],
               database=config['meta']['mysql']["db"],
               user=config['meta']['mysql']["user"],
-              passwd=config['meta']['mysql']["passwd"]
+              passwd=config['meta']['mysql']["passwd"],
+              port=int(config['meta']['mysql']["port"])
             )
     else:
         cx = sqlite3.connect(config['meta']['sqlite'])
@@ -176,6 +177,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
         db_info = cu.fetchall()
+        cx.commit()
         jdbc = db_info[0][2]
         if jdbc[:13] == "jdbc:mysql://":
             host_port = jdbc[13:].split("/")[0]
@@ -246,6 +248,99 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
         return format_res
 
 
+class CreateHandler(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+    ENCRYPT_KEY = "1234salt1234salt"
+    ENCRYPT_IV = "5678salt5678salt"
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+        self.write('{"errorCode":"00","errorMessage","success"}')
+
+    @run_on_executor
+    def _post(self, *args, **kwargs):
+        query_para = json.loads(self.request.body)
+        data_source_id = query_para['selectedJdbcDataSource']['value']
+        query, encrypted_columns = self.generate_table(query_para['dataSource'], query_para['count'], query_para['table_name'])
+        cu = cx.cursor()
+        cu.execute("SELECT id, name, connection_url, driver_class_name, "
+                   "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
+        db_info = cu.fetchall()
+        cx.commit()
+        jdbc = db_info[0][2]
+        if jdbc[:13] == "jdbc:mysql://":
+            host_port = jdbc[13:].split("/")[0]
+            host = host_port.split(":")[0]
+            port = host_port.split(":")[1]
+            db = jdbc[13:].split("/")[1]
+            user = db_info[0][4]
+            password = db_info[0][5]
+            kwargs = {
+                'host': host,
+                'db': db,
+                'user': user,
+                'password': password,
+                'query': query,
+                'port': int(port),
+                'encrypted_columns': encrypted_columns
+            }
+            if 'resultLimit' in query_para.keys():
+                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
+            c_e = ControllerDatabase(kwargs)
+            c_e.do_create()
+            return {}
+        else:
+            return {}
+
+    @gen.coroutine
+    def post(self, *args, **kwargs):
+        try:
+            result = yield self._post(*args, **kwargs)
+            self.write(result)
+        except HTTPError as e:
+            self.write(e)
+        except Exception as e:
+            logger.error(e)
+            raise HTTPError(404, "No results")
+
+    @staticmethod
+    def generate_table(columns, size, table_name):
+        query = "create table if not exists {}".format(table_name)
+        encrypted_columns = {}
+        part = []
+        for i in range(size):
+            col = columns[i]
+            if int(col['length']) > 0 and col['type'].lower() not in ['int']:
+                part.append(col['name'] + " " + col['type']+"(" + col['length'] + ")")
+            else:
+                part.append(col['name'] + " " + col['type'])
+            if col['encryption'].lower() == 'true':
+                if col['fuzzy'].lower() == 'true':
+                    encrypted_columns[col['name']] = {
+                        "fuzzy": True,
+                        "arithmetic": False,
+                    }
+                else:
+                    encrypted_columns[col['name']] = {
+                        "fuzzy": False,
+                        "arithmetic": False,
+                    }
+        part = ", ".join(part)
+        query = query + "(" + part + ")"
+        return query, encrypted_columns
+
+
 def build_columns(k, v):
     if v == 'varchar':
         return {"name": k,
@@ -288,6 +383,7 @@ class QueryComponentHandler(tornado.web.RequestHandler, ABC):
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
         db_info = cu.fetchall()
+        cx.commit()
         jdbc = db_info[0][2]
         if jdbc[:13] == "jdbc:mysql://":
             host_port = jdbc[13:].split("/")[0]
@@ -384,6 +480,7 @@ class SchemaHandler(tornado.web.RequestHandler, ABC):
             self.write(self.format_result(cu.fetchall()))
         else:
             self.write({})
+        cx.commit()
 
     @staticmethod
     def format_result(tables_info):

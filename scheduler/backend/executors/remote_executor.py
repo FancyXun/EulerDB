@@ -74,10 +74,13 @@ class RemoteExecutor(AbstractQueryExecutor):
             enc_query = enc_query + self.conn_info['limit']
         logging.info("Encrypted sql is {}".format(enc_query))
         cursor = self.conn.cursor()
-        cursor.execute(enc_query)
-        if query_type == QueryType.CREATE:
-            assert self.encrypted_cols is not None
-        elif query_type == QueryType.DROP:
+        try:
+            cursor.execute(enc_query)
+        except Exception as e:
+            logging.info(e)
+            if query_type == QueryType.CREATE:
+                self.meta.delete_delta(self.conn_info['db'], table['table'])
+        if query_type == QueryType.DROP:
             self.meta.delete_delta(self.conn_info['db'], table['table'])
         elif query_type == QueryType.SELECT:
             self.result = cursor.fetchall()
