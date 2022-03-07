@@ -163,6 +163,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
     def _post(self, *args, **kwargs):
         query_para = json.loads(self.request.body)
         encrypted_columns = {}
+        ciphertext = True
         if "create_table" in query_para.keys():
             query = query_para['create_table']
             data_source_id = query_para['selectedJdbcDataSource']['value']
@@ -172,6 +173,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             while query[-1] == ";":
                 query = query[:-1]
             data_source_id = query_para["jdbcDataSourceId"]
+            ciphertext = query_para['ciphertext']
         query = query
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
@@ -193,7 +195,8 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'password': password,
                 'query': query,
                 'port': int(port),
-                'encrypted_columns': encrypted_columns
+                'encrypted_columns': encrypted_columns,
+                'ciphertext': ciphertext
             }
             if 'resultLimit' in query_para.keys():
                 kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
@@ -496,14 +499,14 @@ class SchemaHandler(tornado.web.RequestHandler, ABC):
             for key, value in col.items():
                 if value['TYPE'] == 'varchar':
                     format_col = {
-                        "name": key,
+                        "name": key if value['PLAINTEXT'] else key + " *",
                         "javaType": "VARCHAR",
                         "dbType": "VARCHAR",
                         "length": 258
                     }
                 elif value['TYPE'] == 'int':
                     format_col = {
-                        "name": key,
+                        "name": key if value['PLAINTEXT'] else key + " *",
                         "javaType": "INTEGER",
                         "dbType": "INT UNSIGNED",
                         "length": 20
