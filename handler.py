@@ -332,12 +332,12 @@ class CreateHandler(tornado.web.RequestHandler, ABC):
                 if col['fuzzy'].lower() == 'true':
                     encrypted_columns[col['name']] = {
                         "fuzzy": True,
-                        "arithmetic": False,
+                        "key": col['token']
                     }
                 else:
                     encrypted_columns[col['name']] = {
                         "fuzzy": False,
-                        "arithmetic": False,
+                        "key": col['token']
                     }
         part = ", ".join(part)
         query = query + "(" + part + ")"

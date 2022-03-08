@@ -43,7 +43,7 @@ sql_list = {
          ],
     'like':
         ['select id_card, name from {} where name like "%con%" limit 5'.format(table),
-         'select id_card, name, nick_name from {} where nick_name like "con%ent%" limit 5'.format(table),],
+         'select id_card, name, nick_name from {} where nick_name like "con%ent%" limit 5'.format(table), ],
     'count':
         ['select count(*) from {}'.format(table)],
     'delete':
@@ -95,7 +95,7 @@ class TestPostHandler(TestCase):
                 'requests', 'post']
         for i in range(100):
             query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + \
-                    str(310310310 + random.randint(0, 100)) + \
+                    str(310310310 + i) + \
                     '","' + ''.join(data[random.randint(0, 10)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
                 data[random.randint(0, 10)]) + '","' + ''.join(data[random.randint(0, 10)]) + '")'
