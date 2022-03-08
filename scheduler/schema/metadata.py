@@ -12,7 +12,8 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
               host=config['meta']['mysql']["host"],
               database=config['meta']['mysql']["db"],
               user=config['meta']['mysql']["user"],
-              passwd=config['meta']['mysql']["passwd"]
+              passwd=config['meta']['mysql']["passwd"],
+              port=int(config['meta']['mysql']["port"])
             )
         insert_sql = 'insert into p_db_meta values(%s,%s,%s,%s,%s,%s)'
     else:
