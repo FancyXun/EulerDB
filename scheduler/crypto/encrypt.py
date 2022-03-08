@@ -196,8 +196,9 @@ class OPECipher:
     input = 'INT'
     output = 'BIGINT'
 
-    def __init__(self):
-        self.cipher = OPE(b'ZvtU2iyA0E5byRp6YMxbsoEnk1vKPxtm6IcLt4ZxuK0=')
+    def __init__(self, key):
+        self.key = bytes.fromhex(sha256(key.encode('utf8')).hexdigest())
+        self.cipher = OPE(self.key)
 
     def encrypt(self, raw):
         return self.cipher.encrypt(int(raw))
@@ -210,19 +211,29 @@ class FuzzyCipher:
     input = 'STRING'
     output = 'STRING'
 
-    def __init__(self):
-        pass
+    def __init__(self, key):
+        self.cipher = AESCipher(key)
 
-    @staticmethod
-    def encrypt(raw):
+    def encrypt(self, raw):
         result = ""
         if raw.isalpha() or raw.isalnum() or raw.isdigit():
-            assert len(raw) >= 3
+            assert len(raw) >= 3, "the length of {} <= 3".format(raw)
             for i in range(len(raw)-2):
-                result = result + AESCipher("points").encrypt(str(raw)[i: i+3])
+                result = result + self.cipher.encrypt(str(raw)[i: i+3])
         else:
-            assert len(raw) >= 2
+            assert len(raw) >= 2, "the length of {} <= 2".format(raw)
             for i in range(len(raw)-1):
-                result = result + AESCipher("points").encrypt(str(raw)[i: i+2])
+                result = result + self.cipher.encrypt(str(raw)[i: i+2])
 
         return result
+
+
+if __name__ == '__main__':
+    text = 12345678
+    key = "abcdefghijklmnopqrstuvwxyz@#$%^&*()points"
+    ope = OPECipher(key)
+    aes = AESCipher(key)
+    fuzzy = FuzzyCipher(key)
+    print(ope.decrypt(ope.encrypt(text)))
+    print(aes.decrypt(aes.encrypt(str(text))))
+

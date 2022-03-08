@@ -3,7 +3,6 @@ import yaml
 import sqlite3
 import mysql.connector
 
-from scheduler.crypto import encrypt
 
 with open("config.yaml", 'r', encoding='utf-8') as f:
     cfg = f.read()
@@ -20,34 +19,23 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
         cx = sqlite3.connect(config['meta']['sqlite'], check_same_thread=False)
         insert_sql = 'insert into p_db_meta values (?,?,?,?,?,?)'
 
-ENCRYPT_SQL_TYPE = {
+element_type = {
     "INT":
         {
-            "OPE": "BIGINT",
-            "SYMMETRIC": "VARCHAR(300)"
+            "order-preserving": "BIGINT",
+            "symmetric": "VARCHAR(300)"
         },
     "VARCHAR":
         {
-            "SYMMETRIC": 20
+            "symmetric": 20
         }
 }
 
-FUZZY_TYPE = 'VARCHAR(2000)'
-
-CIPHERS = {
-    "VARCHAR": encrypt.AESCipher("points"),
-    "INT": [encrypt.OPECipher(), encrypt.AESCipher("points")]
-}
-
-CIPHERS_META = {
-    "OPE": encrypt.OPECipher(),
-    "SYMMETRIC": encrypt.AESCipher("points"),
-    "FUZZY": encrypt.FuzzyCipher()
-}
+fuzzy_type_fixed = 'VARCHAR(2000)'
 
 FUNC_CIPHERS = {
-    "max": "OPE",
-    "min": "OPE"
+    "max": "order-preserving",
+    "min": "order-preserving"
 }
 
 

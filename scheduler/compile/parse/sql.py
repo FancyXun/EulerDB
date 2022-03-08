@@ -11,7 +11,6 @@ import re
 
 from scheduler.compile.parse import tokens as T
 from scheduler.compile.parse.utils import imt, remove_quotes
-from scheduler.schema.metadata import CIPHERS
 
 
 class NameAliasMixin:
@@ -355,10 +354,7 @@ class TokenList(Token):
 
     @staticmethod
     def __encrypt_token__(token):
-        if str(token.ttype) == "Token.Literal.Number.Integer":
-            return str(CIPHERS["INT"][0].encrypt(int(token.value)))
-        else:
-            return "'" + CIPHERS["VARCHAR"].encrypt(token.value) + "'"
+        return token.value
 
     def insert_before(self, where, token):
         """Inserts *token* before *where*."""

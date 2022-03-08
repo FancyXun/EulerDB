@@ -9,20 +9,20 @@ class SQLSelect(Rewriter):
         self.select_columns = collections.OrderedDict()
         self.select_state = []
 
-    def rewrite(self, select_val, table, cipher='SYMMETRIC', json=None):
+    def rewrite(self, select_val, table, cipher='symmetric', json=None):
         if select_val == "*":
             result = []
             for idx, (k, v) in enumerate(self.db_meta[table]['columns'].items()):
-                if v['PLAINTEXT']:
+                if v['plaintext']:
                     result.append(k)
-                    self.select_state.append("PLAINTEXT")
+                    self.select_state.append("plaintext")
                 else:
-                    result.append(v['ENC_COLUMNS'][cipher])
+                    result.append(v['enc-cols'][cipher])
                     self.select_state.append(cipher)
-                self.select_columns[k] = v['TYPE']
+                self.select_columns[k] = v['type']
             return result
         if select_val == {'count': '*'}:
-            self.select_state.append("PLAINTEXT")
+            self.select_state.append("plaintext")
             self.select_columns["count"] = "int"
             return select_val
         if isinstance(select_val, list):
@@ -31,22 +31,22 @@ class SQLSelect(Rewriter):
             if isinstance(table, list):
                 t_name, col_name = self.split_table_col(select_val, table)
                 col = self.db_meta[t_name]['columns'][col_name]
-                self.select_columns[select_val] = col['TYPE']
-                if col['PLAINTEXT']:
-                    self.select_state.append("PLAINTEXT")
+                self.select_columns[select_val] = col['type']
+                if col['plaintext']:
+                    self.select_state.append("plaintext")
                     return self.db_meta[t_name]['anonymous'] + "." + col_name
                 else:
                     self.select_state.append(cipher)
-                    return self.db_meta[t_name]['anonymous'] + "." + col['ENC_COLUMNS'][cipher]
+                    return self.db_meta[t_name]['anonymous'] + "." + col['enc-cols'][cipher]
             else:
                 col = self.db_meta[table]['columns'][select_val]
-                self.select_columns[select_val] = col['TYPE']
-                if col['PLAINTEXT']:
-                    self.select_state.append("PLAINTEXT")
+                self.select_columns[select_val] = col['type']
+                if col['plaintext']:
+                    self.select_state.append("plaintext")
                     return select_val
                 else:
                     self.select_state.append(cipher)
-                    return col['ENC_COLUMNS'][cipher]
+                    return col['enc-cols'][cipher]
         if isinstance(select_val, dict):
             result = {}
             for k, v in select_val.items():

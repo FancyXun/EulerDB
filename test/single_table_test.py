@@ -31,8 +31,8 @@ sql_list = {
          'select id_card, name, age, score from {} where score > 70 limit 100'.format(table),
          ],
     'order_by_min_max':
-        ['select * from {} where id_card = "496715970993917044442778" and name = "iezlcpnjws"'.format(table),
-         'select * from {} where id_card = "945640842494270259913766" or name = "tlpkiarvng"'.format(table),
+        ['select * from {} where id_card = "310310310" and name = "post"'.format(table),
+         'select * from {} where id_card = "310310311" or name = "always"'.format(table),
          'select id_card, name, age from {} order by age limit 5'.format(table),
          'select distinct id_card, name, age from {} limit 5'.format(table),
          'select distinct age, name, id_card from {} limit 1000'.format(table),
@@ -42,16 +42,16 @@ sql_list = {
          'select max(score), min(age) from {} '.format(table)
          ],
     'like':
-        ['select id_card, name from {} where name like "rax%fpb%" limit 5'.format(table),
-         'select id_card, name, nick_name from {} where nick_name like "%fpb%" limit 5'.format(table),],
+        ['select id_card, name from {} where name like "%con%" limit 5'.format(table),
+         'select id_card, name, nick_name from {} where nick_name like "con%ent%" limit 5'.format(table),],
     'count':
         ['select count(*) from {}'.format(table)],
     'delete':
-        ['DELETE FROM {} WHERE id_card = "496715970993917044442778" and name = "iezlcpnjws" '.format(table)],
-    'alter':
-        ['ALTER TABLE {} ADD Birthday date'.format(table)],
+        ['DELETE FROM {} WHERE id_card = "310310319" and name = "content" '.format(table)],
+    # 'alter':
+    #     ['ALTER TABLE {} ADD Birthday date'.format(table)],
     'update':
-        ['UPDATE {} set id_card = "496715970993917044442778" , name = "iezlcpnjws" WHERE age = 30'.format(table)]
+        ['UPDATE {} set id_card = "310310319" , name = "content" WHERE age = 30'.format(table)]
 
 }
 
@@ -66,15 +66,15 @@ class TestPostHandler(TestCase):
         encrypted_columns = {
             "id_card": {
                 "fuzzy": True,
-                "arithmetic": False,
+                "key": "abcdefgpoints"
             },
             "name": {
                 "fuzzy": True,
-                "arithmetic": False
+                "key": "abcdefghijklmn"
             },
             "age": {
                 "fuzzy": False,
-                "arithmetic": False
+                "key": "abcdefgopqrst"
             }
         }
         content['query'] = create_table_sql
@@ -88,16 +88,17 @@ class TestPostHandler(TestCase):
         sql = 'drop table {}'.format(table)
         content['query'] = sql
         json_data = json.dumps(content)
-        resp = requests.post('http://localhost:8888/query', json_data)
+        requests.post('http://localhost:8888/query', json_data)
 
     def test_handler_insert_table(self):
-        for i in range(1000):
-            query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + str(
-                random.randint(1000000000000000000, 1000000000000000000000000)) + '","' + ''.join(
-                random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '",' + str(random.randint(1, 50)) + ', "' + ''.join(
+        data = ['content', 'random', 'test', 'always', 'users', 'json', 'localhost', 'value', 'handler', 'continue',
+                'requests', 'post']
+        for i in range(100):
+            query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + \
+                    str(310310310 + random.randint(0, 100)) + \
+                    '","' + ''.join(data[random.randint(0, 10)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
-                random.sample('zyxwvutsrqponmlkjihgfedcba', 10)) + '","' + ''.join(
-                random.sample('zyxwvutsrqpondgsghgsfgyftuywiecvdbhsbdhgshfdgsgfysgmlkjihgfedcba', 30)) + '")'
+                data[random.randint(0, 10)]) + '","' + ''.join(data[random.randint(0, 10)]) + '")'
             content['query'] = query.format(table)
             json_data = json.dumps(content)
             requests.post('http://localhost:8888/query', json_data)

@@ -497,16 +497,16 @@ class SchemaHandler(tornado.web.RequestHandler, ABC):
                 table["columns"] = []
             col = json.loads(row[1])
             for key, value in col.items():
-                if value['TYPE'] == 'varchar':
+                if value['type'] == 'varchar':
                     format_col = {
-                        "name": key if value['PLAINTEXT'] else key + " *",
+                        "name": key if value['plaintext'] else key + " *",
                         "javaType": "VARCHAR",
                         "dbType": "VARCHAR",
                         "length": 258
                     }
-                elif value['TYPE'] == 'int':
+                elif value['type'] == 'int':
                     format_col = {
-                        "name": key if value['PLAINTEXT'] else key + " *",
+                        "name": key if value['plaintext'] else key + " *",
                         "javaType": "INTEGER",
                         "dbType": "INT UNSIGNED",
                         "length": 20

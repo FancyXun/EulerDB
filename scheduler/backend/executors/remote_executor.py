@@ -29,6 +29,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.encrypted_cols = None
         self.rewriter = None
         self.meta = Delta()
+        self.table = None
 
     @staticmethod
     def connect_db(conn_info):
@@ -69,19 +70,23 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.encrypted_cols = encrypted_cols
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
-        enc_query, table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
-        if query_type == QueryType.SELECT and 'limit' in self.conn_info.keys():
-            enc_query = enc_query + self.conn_info['limit']
-        logging.info("Encrypted sql is {}".format(enc_query))
-        cursor = self.conn.cursor()
+        try:
+            enc_query, self.table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
+            if query_type == QueryType.SELECT and 'limit' in self.conn_info.keys():
+                enc_query = enc_query + self.conn_info['limit']
+            logging.info("Encrypted sql is {}".format(enc_query))
+            cursor = self.conn.cursor()
+        except Exception as e:
+            logging.info(e)
+            raise e
         try:
             cursor.execute(enc_query)
         except Exception as e:
             logging.info(e)
             if query_type == QueryType.CREATE:
-                self.meta.delete_delta(self.conn_info['db'], table['table'])
+                self.meta.delete_delta(self.conn_info['db'], self.table['table'])
         if query_type == QueryType.DROP:
-            self.meta.delete_delta(self.conn_info['db'], table['table'])
+            self.meta.delete_delta(self.conn_info['db'], self.table['table'])
         elif query_type == QueryType.SELECT:
             self.result = cursor.fetchall()
         else:
@@ -94,5 +99,8 @@ class RemoteExecutor(AbstractQueryExecutor):
 
     def get_sql_columns(self):
         return self.rewriter.select.select_columns
+
+    def get_db_meta(self):
+        return Delta().meta[self.conn_info['db']], self.table
 
 

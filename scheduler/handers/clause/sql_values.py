@@ -1,5 +1,5 @@
-from scheduler.schema.metadata import CIPHERS_META
 from scheduler.handers.clause.rewriter import Rewriter
+from scheduler.crypto import encrypt
 
 
 class SQLValues(Rewriter):
@@ -10,23 +10,20 @@ class SQLValues(Rewriter):
         new_values = []
         enc_table_meta = self.db_meta[table]
         for col, value in zip(json['columns'], values):
-            if enc_table_meta['columns'][col]['PLAINTEXT']:
+            if enc_table_meta['columns'][col]['plaintext']:
                 new_values.append(value)
             else:
-                for enc in enc_table_meta['columns'][col]['ENC_COLUMNS'].keys():
-                    new_values.append(self.encrypt_value(value['value'], enc))
+                for enc in enc_table_meta['columns'][col]['enc-cols'].keys():
+                    new_values.append(self.encrypt_value(table, col, value['value'], enc))
         return new_values
 
-    @staticmethod
-    def encrypt_value(value, enc):
-        if isinstance(value, int):
-            if CIPHERS_META[enc].input == 'INT':
-                return {'value': CIPHERS_META[enc].encrypt(int(value))}
-            else:
-                return {'value': {'literal': CIPHERS_META[enc].encrypt(str(value))}}
-        elif isinstance(value, dict):
-            return {
-                'value':
-                    {'literal': CIPHERS_META[enc].encrypt(str(value['literal']))}}
-        else:
-            raise Exception("Bad value in json {}".format(value))
+    def encrypt_value(self, table, col, value, enc):
+        key = self.db_meta[table]['columns'][col]['key']
+        if isinstance(value, dict):
+            value = value['literal']
+        if enc == "order-preserving":
+            return {'value': encrypt.OPECipher(key).encrypt(int(value))}
+        if enc == "symmetric":
+            return {'value': {'literal': encrypt.AESCipher(key).encrypt(str(value))}}
+        if enc == "fuzzy":
+            return {'value': {'literal': encrypt.FuzzyCipher(key).encrypt(str(value))}}
