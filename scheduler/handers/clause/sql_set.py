@@ -15,5 +15,5 @@ class SQLSet(Rewriter):
                 result[k] = v
             else:
                 for k1, v1 in enc_table_meta['columns'][k]['enc-cols'].items():
-                    result[v1] = self.where.rewrite(v, table, k1)
+                    result[v1] = self.where.rewrite(v, table, k1, key=enc_table_meta['columns'][k]['key'])
         return result
