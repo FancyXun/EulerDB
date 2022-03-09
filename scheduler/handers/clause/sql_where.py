@@ -65,6 +65,8 @@ class SQLWhere(Rewriter):
                 return "%".join(result)
             if cipher == 'symmetric':
                 return encrypt.AESCipher(key).encrypt(str(where_value))
+            if cipher == 'order-preserving':
+                return encrypt.OPECipher(key).encrypt(where_value)
         if isinstance(where_value, str):
             if cipher == 'fuzzy':
                 partial_list = where_value.split("%")
