@@ -32,6 +32,7 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
             )
     else:
         cx = sqlite3.connect(config['meta']['sqlite'])
+    cu = cx.cursor()
 
 
 class BasePostRequestHandler(tornado.web.RequestHandler):
@@ -175,7 +176,6 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             data_source_id = query_para["jdbcDataSourceId"]
             ciphertext = query_para['ciphertext']
         query = query
-        cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
         db_info = cu.fetchall()
@@ -276,7 +276,6 @@ class CreateHandler(tornado.web.RequestHandler, ABC):
         query_para = json.loads(self.request.body)
         data_source_id = query_para['selectedJdbcDataSource']['value']
         query, encrypted_columns = self.generate_table(query_para['dataSource'], query_para['count'], query_para['table_name'])
-        cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
         db_info = cu.fetchall()
@@ -382,7 +381,6 @@ class QueryComponentHandler(tornado.web.RequestHandler, ABC):
     @run_on_executor
     def _post(self, component_id=None):
         query_para = json.loads(self.request.body)
-        cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
         db_info = cu.fetchall()
@@ -471,7 +469,6 @@ class SchemaHandler(tornado.web.RequestHandler, ABC):
 
     @run_on_executor
     def get(self, component_id=None):
-        cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
         db_info = cu.fetchall()

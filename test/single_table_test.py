@@ -93,7 +93,7 @@ class TestPostHandler(TestCase):
     def test_handler_insert_table(self):
         data = ['content', 'random', 'test', 'always', 'users', 'json', 'localhost', 'value', 'handler', 'continue',
                 'requests', 'post']
-        for i in range(100):
+        for i in range(200):
             query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + \
                     str(310310310 + i) + \
                     '","' + ''.join(data[random.randint(0, 10)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
