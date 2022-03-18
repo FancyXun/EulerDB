@@ -55,6 +55,13 @@ sql_list = {
 
 }
 
+sql_list1 ={
+    '1':
+        ["insert into {}(id_card, name, age, sex, score, nick_name, comments) "
+         "values ('120703016', '杭州市', 100, 'f', 80, 'ffff', 'hello')".format(table)]
+
+}
+
 
 class TestPostHandler(TestCase):
 
@@ -104,7 +111,7 @@ class TestPostHandler(TestCase):
             requests.post('http://localhost:8888/query', json_data)
 
     def test_handler_sql(self):
-        for key, value in sql_list.items():
+        for key, value in sql_list1.items():
             print("---{}...".format(key))
             for v in value:
                 content['query'] = v

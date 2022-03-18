@@ -12,6 +12,7 @@ from scheduler.handers.clause import table_key
 class Rewriter(Clause):
     def __init__(self, db, encrypted_cols=None):
         super().__init__(db, encrypted_cols)
+        self.limit = float('-inf')
 
     def rewrite_query(self, query):
         """
@@ -22,6 +23,8 @@ class Rewriter(Clause):
         if self.encrypted_cols:
             return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols)
         json = parse(query)
+        if 'limit' in json.keys():
+            self.limit = abs(int(json['limit']))
         source_json = copy.deepcopy(json)
         for key in table_key:
             if key in json.keys():

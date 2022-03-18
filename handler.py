@@ -200,7 +200,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'ciphertext': ciphertext
             }
             if 'resultLimit' in query_para.keys():
-                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
+                kwargs['limit'] = int(query_para['resultLimit'])
             c_e = ControllerDatabase(kwargs)
             if "create_table" not in query_para.keys():
                 res = c_e.do_query()
@@ -301,7 +301,7 @@ class CreateHandler(tornado.web.RequestHandler, ABC):
                 'encrypted_columns': encrypted_columns
             }
             if 'resultLimit' in query_para.keys():
-                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
+                kwargs['limit'] = int(query_para['resultLimit'])
             c_e = ControllerDatabase(kwargs)
             c_e.do_create()
             return {}
@@ -478,9 +478,9 @@ class SchemaHandler(tornado.web.RequestHandler, ABC):
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
         db_info = cu.fetchall()
-        jdbc = db_info[0][2]
-        if jdbc[:13] == "jdbc:mysql://":
-            db = jdbc[13:].split("/")[1]
+        connection_url = db_info[0][2]
+        if connection_url[:13] == "jdbc:mysql://":
+            db = connection_url[13:]
             cu.execute(
                 "SELECT table_name, col_info FROM p_db_meta WHERE database_name='{}' order by table_name".format(db))
             self.write(self.format_result(cu.fetchall()))
