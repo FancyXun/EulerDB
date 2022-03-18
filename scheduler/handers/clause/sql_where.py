@@ -61,6 +61,9 @@ class SQLWhere(Rewriter):
                         result.append("")
                         continue
                     else:
+                        if len(str(partial)) < 3:
+                            raise Exception("The length of fuzzy search word {} is {} <3"
+                                            .format(partial, len(str(partial))))
                         result.append(encrypt.FuzzyCipher(key).encrypt(str(partial)))
                 return "%".join(result)
             if cipher == 'symmetric':
@@ -76,6 +79,9 @@ class SQLWhere(Rewriter):
                         result.append("")
                         continue
                     else:
+                        if len(str(partial)) < 3:
+                            raise Exception("The length of fuzzy search word {} is {} <3"
+                                            .format(partial, len(str(partial))))
                         result.append(encrypt.FuzzyCipher(key).encrypt(partial))
                 return "%".join(result)
             if cipher == 'symmetric':

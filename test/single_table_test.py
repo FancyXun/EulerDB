@@ -55,13 +55,6 @@ sql_list = {
 
 }
 
-sql_list1 ={
-    '1':
-        ["insert into {}(id_card, name, age, sex, score, nick_name, comments) "
-         "values ('120703016', '杭州市', 100, 'f', 80, 'ffff', 'hello')".format(table)]
-
-}
-
 
 class TestPostHandler(TestCase):
 
@@ -99,11 +92,12 @@ class TestPostHandler(TestCase):
 
     def test_handler_insert_table(self):
         data = ['content', 'random', 'test', 'always', 'users', 'json', 'localhost', 'value', 'handler', 'continue',
-                'requests', 'post']
-        for i in range(200):
+                'requests', 'post', '夯实', '杭州市', '杭州市大华', '光之树科技', '中国', '中', '上海', '上海市浦东新区疫情地图',
+                '阿里巴巴', '百度', '高德地图', '名次', '中国', '中', '上海', '上海市浦东新区疫情地图']
+        for i in range(300):
             query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments) values ( "' + \
                     str(310310310 + i) + \
-                    '","' + ''.join(data[random.randint(0, 10)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
+                    '","' + ''.join(data[random.randint(0, 20)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
                 data[random.randint(0, 10)]) + '","' + ''.join(data[random.randint(0, 10)]) + '")'
             content['query'] = query.format(table)
@@ -111,7 +105,7 @@ class TestPostHandler(TestCase):
             requests.post('http://localhost:8888/query', json_data)
 
     def test_handler_sql(self):
-        for key, value in sql_list1.items():
+        for key, value in sql_list.items():
             print("---{}...".format(key))
             for v in value:
                 content['query'] = v
