@@ -16,6 +16,7 @@
 from base64 import b64decode
 from base64 import b64encode
 from hashlib import sha256
+from functools import reduce
 import random
 
 from cryptography.hazmat.primitives import padding
@@ -24,6 +25,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 from gmssl.sm4 import CryptSM4, SM4_ENCRYPT, SM4_DECRYPT
 from scheduler.crypto.ope.ope import OPE
+from phe import paillier
 
 BLOCK_SIZE = 16
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s) % BLOCK_SIZE)
@@ -31,7 +33,6 @@ unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 
 
 class AESCrypto(object):
-
     AES_CBC_KEY = b'a\x14\x04.\x8a\xa2a\xec,\xf1\x07\xc2l\x19|`g\xae\xba\tl\xc4\xa7\xac$\x11\xef\x0f\xeaN\x01\xcf'
     AES_CBC_IV = b'\xd3|\xf6(\xc3\x15\x08\xeaq\xc4}\xbf\xc3\x95\\{'
 
@@ -245,12 +246,50 @@ class FuzzyCipher:
         return result
 
 
+class HomomorphicCipher:
+    input = 'INT'
+    output = 'STRING'
+
+    def __init__(self, homomorphic_key):
+        if homomorphic_key:
+            self.p, self.q = homomorphic_key
+            self.n = self.p * self.q
+            self.pk = paillier.PaillierPublicKey(int(self.n))
+            self.sk = paillier.PaillierPrivateKey(self.pk, int(self.p), int(self.q))
+            self.precision = None
+
+    def encrypt(self, raw):
+        return str(self.pk.encrypt(int(raw), self.precision).ciphertext(False))
+
+    def decrypt(self, enc):
+        enc_list = str(enc).split(',')
+        enc_value_list, agg_type = enc_list[:-1], enc_list[-1]
+        n_square = self.pk.nsquare
+        if agg_type == 'SUM':
+            sum_enc_res = reduce(lambda x, y: (x * y) % n_square, map(lambda x: int(x), enc_value_list), 1)
+            enc_number = paillier.EncryptedNumber(self.pk, int(sum_enc_res))
+            return self.sk.decrypt(enc_number)
+        elif agg_type == 'AVG':
+            sum_enc_res = reduce(lambda x, y: (x * y) % n_square, map(lambda x: int(x), enc_value_list), 1)
+            enc_number = paillier.EncryptedNumber(self.pk, int(sum_enc_res))
+            return self.sk.decrypt(enc_number) / len(enc_value_list)
+        num = 1
+        if ',' in str(enc):
+            enc, num = enc.split(',')
+        enc_number = paillier.EncryptedNumber(self.pk, int(enc))
+        return self.sk.decrypt(enc_number) / int(num)
+
+
 if __name__ == '__main__':
     text = 12345678
     key = "abcdefghijklmnopqrstuvwxyz@#$%^&*()points"
+    homo_key = "806267974661120203,787659527,1023624989"
     ope = OPECipher(key)
     aes = AESCipher(key)
     fuzzy = FuzzyCipher(key)
+    homo = HomomorphicCipher(homo_key)
+    print(homo.decrypt(homo.encrypt(text)))
+
     ope_text = ope.encrypt(text)
     aes_text = aes.encrypt(str(text))
     print(ope_text)
@@ -270,4 +309,3 @@ if __name__ == '__main__':
     aes_text = aes.encrypt(str(text3))
     print(aes_text)
     print(aes.decrypt(aes_text))
-

@@ -9,8 +9,8 @@ class Clause(object):
         self.db_meta = {}
         self.encrypted_cols = encrypted_cols
         self.origin_query = None
-        if db in Delta().meta.keys():
-            self.db_meta = Delta().meta[db]
+        if Delta().meta:
+            self.db_meta = Delta().meta.get(db, {})
         for key, value in clause.items():
             if isinstance(value, dict):
                 for k, v in value.items():

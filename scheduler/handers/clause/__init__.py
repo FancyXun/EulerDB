@@ -20,7 +20,12 @@ clause = {
     'orderby': OrderBy,
     'columns': SQLColumns,
     'drop': SQLDrop,
-    'query': {'select': SQLValues}
+    'query': {'select': SQLValues},
+    'alter': AnonymousTable,
+    'reference_table': AnonymousTable,
+    'add primary key': SQLSelect,
+    'add foreign key': SQLSelect,
+    'reference_feature': SQLSelect
 }
 
 table_key = [
@@ -29,6 +34,7 @@ table_key = [
     'select_distinct',
     'update',
     'delete',
-    'drop']
+    'drop',
+    'alter']
 
 

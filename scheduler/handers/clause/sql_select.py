@@ -6,7 +6,8 @@ from scheduler.handers.clause.rewriter import Rewriter
 class SQLSelect(Rewriter):
     def __init__(self, db_meta):
         super().__init__(db_meta)
-        self.select_columns = collections.OrderedDict()
+        self.select_columns = []
+        # self.select_columns = collections.OrderedDict()
         self.select_state = []
 
     def rewrite(self, select_val, table, cipher='symmetric', json=None):
@@ -19,19 +20,22 @@ class SQLSelect(Rewriter):
                 else:
                     result.append(v['enc-cols'][cipher])
                     self.select_state.append(cipher)
-                self.select_columns[k] = v['type']
+                self.select_columns.append(k)
+                # self.select_columns[k] = v['type']
             return result
         if select_val == {'count': '*'}:
             self.select_state.append("plaintext")
-            self.select_columns["count"] = "int"
+            self.select_columns.append("count")
+            # self.select_columns["count"] = "int"
             return select_val
         if isinstance(select_val, list):
             return [self.rewrite(v['value'], table) for v in select_val]
         if isinstance(select_val, str):
+            self.select_columns.append(select_val)
             if isinstance(table, list):
                 t_name, col_name = self.split_table_col(select_val, table)
                 col = self.db_meta[t_name]['columns'][col_name]
-                self.select_columns[select_val] = col['type']
+                # self.select_columns[select_val] = col['type']
                 if col['plaintext']:
                     self.select_state.append("plaintext")
                     return self.db_meta[t_name]['anonymous'] + "." + col_name
@@ -40,7 +44,7 @@ class SQLSelect(Rewriter):
                     return self.db_meta[t_name]['anonymous'] + "." + col['enc-cols'][cipher]
             else:
                 col = self.db_meta[table]['columns'][select_val]
-                self.select_columns[select_val] = col['type']
+                # self.select_columns[select_val] = col['type']
                 if col['plaintext']:
                     self.select_state.append("plaintext")
                     return select_val

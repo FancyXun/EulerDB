@@ -14,7 +14,8 @@ SQL_TYPES = [
     QueryType.INSERT,
     QueryType.DELETE,
     QueryType.UPDATE,
-    QueryType.DROP
+    QueryType.DROP,
+    QueryType.ALTER
 ]
 
 connection_pool = {}
@@ -62,7 +63,7 @@ class RemoteExecutor(AbstractQueryExecutor):
 
         return connection.connection()
 
-    def call(self, query, parser, encrypted_cols):
+    def call(self, query, parser, encrypted_cols, use_cursor=True):
         """
 
         """
@@ -83,6 +84,7 @@ class RemoteExecutor(AbstractQueryExecutor):
             logging.info(e)
             raise e
         try:
+            enc_query = self.inject_procedure(cursor, enc_query, use_cursor)
             cursor.execute(enc_query)
         except Exception as e:
             logging.info(e)
@@ -103,11 +105,25 @@ class RemoteExecutor(AbstractQueryExecutor):
     def get_sql_columns(self):
         return self.rewriter.select.select_columns
 
+    def inject_procedure(self, cursor, enc_query, use_cursor=True):
+        if 'SUM' not in enc_query and 'AVG' not in enc_query:
+            return enc_query
+        sum_feature_name_list, avg_feature_name_list, need_paillier_procedure, table_name, enc_query = \
+            Delta.get_paillier_procedure_info(enc_query, self.conn_info['db'], self.table)
+        if not need_paillier_procedure:
+            return enc_query
+        for feature in sum_feature_name_list:
+            Delta.create_paillier_sum_procedure(cursor, feature, table_name, use_cursor)
+            enc_query = Delta.modify_sum_query(enc_query, feature[0], use_cursor)
+        for feature in avg_feature_name_list:
+            Delta.create_paillier_sum_procedure(cursor, feature, table_name, use_cursor)
+            enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor)
+        enc_query = enc_query + ' limit 1'
+        return enc_query
+
     def get_db_meta(self):
         return Delta().meta[self.str_db], self.table
 
     @property
     def str_db(self):
         return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])
-
-

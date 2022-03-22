@@ -20,10 +20,16 @@ class SQLValues(Rewriter):
     def encrypt_value(self, table, col, value, enc):
         key = self.db_meta[table]['columns'][col]['key']
         if isinstance(value, dict):
-            value = value['literal']
+            if self.db_meta[table]['columns'][col]['type'] in ['float', 'double']:
+                value = int(eval(value['literal']) * 2 ** 40)
+            else:
+                value = value['literal']
         if enc == "order-preserving":
             return {'value': encrypt.OPECipher(key).encrypt(int(value))}
         if enc == "symmetric":
             return {'value': {'literal': encrypt.AESCipher(key).encrypt(str(value))}}
         if enc == "fuzzy":
             return {'value': {'literal': encrypt.FuzzyCipher(key).encrypt(str(value))}}
+        if enc == "arithmetic":
+            homomorphic_key = self.db_meta[table]['columns'][col]['homomorphic_key']
+            return {'value': {'literal': encrypt.HomomorphicCipher(homomorphic_key).encrypt(int(value))}}

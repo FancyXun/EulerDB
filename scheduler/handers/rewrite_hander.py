@@ -1,12 +1,14 @@
 import copy
 
 from sql_parsing import parse_mysql as parse
-from sql_parsing import format
+from sql_parsing import format, parse_alter_key, format_alter_key
 
 from scheduler.handers.table import rewrite_table
 from scheduler.handers.clause.sql_clause import Clause
 from scheduler.handers.clause import clause
 from scheduler.handers.clause import table_key
+
+from scheduler.schema.metadata import Delta
 
 
 class Rewriter(Clause):
@@ -22,7 +24,8 @@ class Rewriter(Clause):
         self.origin_query = query
         if self.encrypted_cols:
             return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols)
-        json = parse(query)
+        alter_key_json = parse_alter_key(query)
+        json = parse(query) if not alter_key_json else alter_key_json
         if 'limit' in json.keys():
             self.limit = abs(int(json['limit']))
         source_json = copy.deepcopy(json)
@@ -51,4 +54,8 @@ class Rewriter(Clause):
                 json = __inner__(json, key, func)
             else:
                 json[key] = func.rewrite(json[key], table, json=source_json)
+        # record json in Delta
+        Delta.table_json = json
+        if 'alter' in json:
+            return format_alter_key(json), table
         return format(json), table
