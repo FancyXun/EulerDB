@@ -72,9 +72,12 @@ class RemoteExecutor(AbstractQueryExecutor):
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
         try:
-            enc_query, self.table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
-            if query_type == QueryType.SELECT and 'limit' in self.conn_info.keys():
-                enc_query = enc_query + self.conn_info['limit']
+            enc_query, self.table = self.dispatch(query)
+            if query_type == QueryType.SELECT:
+                if 'limit' in self.conn_info.keys():
+                    limit = self.conn_info['limit']
+                    if self.rewriter.limit < 0:
+                        enc_query = enc_query + " limit {}".format(limit)
             logging.info("Encrypted sql is {}".format(enc_query))
             cursor = self.conn.cursor()
         except Exception as e:
@@ -86,17 +89,17 @@ class RemoteExecutor(AbstractQueryExecutor):
         except Exception as e:
             logging.info(e)
             if query_type == QueryType.CREATE:
-                self.meta.delete_delta(self.conn_info['db'], self.table['table'])
+                self.meta.delete_delta(self.str_db, self.table['table'])
         if query_type == QueryType.DROP:
-            self.meta.delete_delta(self.conn_info['db'], self.table['table'])
+            self.meta.delete_delta(self.str_db, self.table['table'])
         elif query_type == QueryType.SELECT:
             self.result = cursor.fetchall()
         else:
             self.conn.commit()
         self.conn.close()
 
-    def dispatch(self, query, db, enc_cols):
-        self.rewriter = Rewriter(db, enc_cols)
+    def dispatch(self, query):
+        self.rewriter = Rewriter(self.str_db, self.encrypted_cols)
         return self.rewriter.rewrite_query(query)
 
     def get_sql_columns(self):
@@ -119,4 +122,8 @@ class RemoteExecutor(AbstractQueryExecutor):
         return enc_query
 
     def get_db_meta(self):
-        return Delta().meta[self.conn_info['db']], self.table
+        return Delta().meta[self.str_db], self.table
+
+    @property
+    def str_db(self):
+        return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])

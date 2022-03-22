@@ -108,8 +108,21 @@ class AESCipher:
     def __init__(self, key):
         self.key = bytes.fromhex(sha256(key.encode('utf8')).hexdigest())
 
+    @staticmethod
+    def pad(plain_text):
+        if len(plain_text) % BLOCK_SIZE != 0:
+            add = BLOCK_SIZE - (len(plain_text) % BLOCK_SIZE)
+        else:
+            add = 0
+
+        return plain_text + ("\0".encode() * add)
+
+    @staticmethod
+    def unpad(plain_text):
+        return plain_text.decode('utf8').rstrip("\0")
+
     def encrypt(self, raw):
-        raw = pad(raw).encode('utf8')
+        raw = self.pad(raw.encode('utf8'))
         aes = Cipher(algorithms.AES(self.key), modes.ECB())
         cipher = aes.encryptor()
         c = cipher.update(raw) + cipher.finalize()
@@ -119,8 +132,8 @@ class AESCipher:
         enc = b64decode(enc)
         aes = Cipher(algorithms.AES(self.key), modes.ECB())
         cipher = aes.decryptor()
-        m = unpad(cipher.update(enc) + cipher.finalize())
-        return m.decode('utf8')
+        m = self.unpad(cipher.update(enc) + cipher.finalize())
+        return m
 
 
 class SM4CipherBytes:
@@ -218,13 +231,17 @@ class FuzzyCipher:
     def encrypt(self, raw):
         result = ""
         if raw.isalpha() or raw.isalnum() or raw.isdigit():
-            assert len(raw) >= 3, "the length of {} <= 3".format(raw)
-            for i in range(len(raw) - 2):
-                result = result + self.cipher.encrypt(str(raw)[i: i + 3])
+            if len(raw) < 3:
+                result = self.cipher.encrypt(str(raw))
+            else:
+                for i in range(len(raw)-2):
+                    result = result + self.cipher.encrypt(str(raw)[i: i+3])
         else:
-            assert len(raw) >= 2, "the length of {} <= 2".format(raw)
-            for i in range(len(raw) - 1):
-                result = result + self.cipher.encrypt(str(raw)[i: i + 2])
+            if len(raw) < 2:
+                result = self.cipher.encrypt(str(raw))
+            else:
+                for i in range(len(raw)-1):
+                    result = result + self.cipher.encrypt(str(raw)[i: i+2])
 
         return result
 
@@ -271,6 +288,24 @@ if __name__ == '__main__':
     aes = AESCipher(key)
     fuzzy = FuzzyCipher(key)
     homo = HomomorphicCipher(homo_key)
-    print(ope.decrypt(ope.encrypt(text)))
-    print(aes.decrypt(aes.encrypt(str(text))))
     print(homo.decrypt(homo.encrypt(text)))
+
+    ope_text = ope.encrypt(text)
+    aes_text = aes.encrypt(str(text))
+    print(ope_text)
+    print(aes_text)
+    print(ope.decrypt(ope_text))
+    print(aes.decrypt(aes_text))
+    print("-"*200)
+    text1 = '345sfdfsytd6twet6wte6wt6ewtetw'
+    text2 = 23143241241324
+    text3 = '中文'
+    aes_text = aes.encrypt(str(text1))
+    print(aes_text)
+    print(aes.decrypt(aes_text))
+    aes_text = aes.encrypt(str(text2))
+    print(aes_text)
+    print(aes.decrypt(aes_text))
+    aes_text = aes.encrypt(str(text3))
+    print(aes_text)
+    print(aes.decrypt(aes_text))

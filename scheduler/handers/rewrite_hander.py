@@ -14,6 +14,7 @@ from scheduler.schema.metadata import Delta
 class Rewriter(Clause):
     def __init__(self, db, encrypted_cols=None):
         super().__init__(db, encrypted_cols)
+        self.limit = float('-inf')
 
     def rewrite_query(self, query):
         """
@@ -25,6 +26,8 @@ class Rewriter(Clause):
             return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols)
         alter_key_json = parse_alter_key(query)
         json = parse(query) if not alter_key_json else alter_key_json
+        if 'limit' in json.keys():
+            self.limit = abs(int(json['limit']))
         source_json = copy.deepcopy(json)
         for key in table_key:
             if key in json.keys():

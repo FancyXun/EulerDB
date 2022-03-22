@@ -17,7 +17,7 @@ content = {
 }
 
 
-table = 'test_cr_kv_pp_j26'
+table = 'test'
 
 
 sql_list = {
@@ -115,11 +115,12 @@ class TestPostHandler(TestCase):
 
     def test_handler_insert_table(self):
         data = ['content', 'random', 'test', 'always', 'users', 'json', 'localhost', 'value', 'handler', 'continue',
-                'requests', 'post']
+                'requests', 'post', '夯实', '杭州市', '杭州市大华', '光之树科技', '中国', '中', '上海', '上海市浦东新区疫情地图',
+                '阿里巴巴', '百度', '高德地图', '名次', '中国', '中', '上海', '上海市浦东新区疫情地图']
         for i in range(100):
             query = 'insert into {}(id_card, name, age, sex, score, nick_name, comments, weight, edu, height) values ( "' + \
                     str(310310310 + i) + \
-                    '","' + ''.join(data[random.randint(0, 10)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
+                    '","' + ''.join(data[random.randint(0, 20)]) + '",' + str(random.randint(1, 100)) + ', "' + ''.join(
                 random.sample('fm', 1)) + '",' + str(random.randint(60, 100)) + ',"' + ''.join(
                 data[random.randint(0, 10)]) + '","' + ''.join(data[random.randint(0, 10)]) + '","' + str(10*random.random()) + \
                     '","' + 'colle' + '","' + str(10*random.random()) + '")'
@@ -142,17 +143,16 @@ class TestPostHandler(TestCase):
                     continue
 
 
-# class TestRewriterHandler(TestCase):
-#
-#     def test_select_rewrite(self):
-#         sql = {
-#             'query': f'select id_card, name, age from {table} where age = 20 limit 5',
-#             'db': db
-#         }
-#         json_data = json.dumps(sql)
-#         resp = requests.post('http://localhost:8888/rewrite_query', json_data)
-#         print(resp.text)
-#
+class TestRewriterHandler(TestCase):
+
+    def test_select_rewrite(self):
+        sql = {
+            'query': 'select id_card, name, age from test where age = 20 limit 5',
+            'db': db
+        }
+        json_data = json.dumps(sql)
+        resp = requests.post('http://localhost:8888/rewrite_query', json_data)
+        print(resp.text)
 
 if __name__ == "__main__":
     unittest.main()

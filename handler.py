@@ -23,15 +23,29 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
     cfg = f.read()
     config = yaml.full_load(cfg)
     if config['meta']['type'] == 'mysql':
-        cx = mysql.connector.connect(
-              host=config['meta']['mysql']["host"],
-              database=config['meta']['mysql']["db"],
-              user=config['meta']['mysql']["user"],
-              passwd=config['meta']['mysql']["passwd"],
-              port=int(config['meta']['mysql']["port"])
-            )
+        db_conn = mysql.connector.connect(
+            host=config['meta']['mysql']["host"],
+            database=config['meta']['mysql']["db"],
+            user=config['meta']['mysql']["user"],
+            passwd=config['meta']['mysql']["passwd"],
+            port=int(config['meta']['mysql']["port"])
+        )
     else:
-        cx = sqlite3.connect(config['meta']['sqlite'])
+        db_conn = sqlite3.connect(config['meta']['sqlite'])
+
+
+def test_connection(_db_conn):
+    try:
+        _db_conn.ping()
+    except:
+        _db_conn = mysql.connector.connect(
+            host=config['meta']['mysql']["host"],
+            database=config['meta']['mysql']["db"],
+            user=config['meta']['mysql']["user"],
+            passwd=config['meta']['mysql']["passwd"],
+            port=int(config['meta']['mysql']["port"])
+        )
+    return _db_conn
 
 
 class BasePostRequestHandler(tornado.web.RequestHandler):
@@ -157,7 +171,6 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
     def options(self):
         self.set_status(204)
         self.finish()
-        self.write('{"errorCode":"00","errorMessage","success"}')
 
     @run_on_executor
     def _post(self, *args, **kwargs):
@@ -175,11 +188,13 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             data_source_id = query_para["jdbcDataSourceId"]
             ciphertext = query_para['ciphertext']
         query = query
+        cx = test_connection(db_conn)
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
         db_info = cu.fetchall()
         cx.commit()
+        cu.close()
         jdbc = db_info[0][2]
         if jdbc[:13] == "jdbc:mysql://":
             host_port = jdbc[13:].split("/")[0]
@@ -199,7 +214,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                 'ciphertext': ciphertext
             }
             if 'resultLimit' in query_para.keys():
-                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
+                kwargs['limit'] = int(query_para['resultLimit'])
             c_e = ControllerDatabase(kwargs)
             if "create_table" not in query_para.keys():
                 res = c_e.do_query()
@@ -218,6 +233,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
         except HTTPError as e:
             self.write(e)
         except Exception as e:
+            self.write({'error': str(e)})
             logger.error(e)
             raise HTTPError(404, "No results")
 
@@ -275,12 +291,15 @@ class CreateHandler(tornado.web.RequestHandler, ABC):
     def _post(self, *args, **kwargs):
         query_para = json.loads(self.request.body)
         data_source_id = query_para['selectedJdbcDataSource']['value']
-        query, encrypted_columns = self.generate_table(query_para['dataSource'], query_para['count'], query_para['table_name'])
+        query, encrypted_columns = self.generate_table(query_para['dataSource'], query_para['count'],
+                                                       query_para['table_name'])
+        cx = test_connection(db_conn)
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
         db_info = cu.fetchall()
         cx.commit()
+        cu.close()
         jdbc = db_info[0][2]
         if jdbc[:13] == "jdbc:mysql://":
             host_port = jdbc[13:].split("/")[0]
@@ -299,7 +318,7 @@ class CreateHandler(tornado.web.RequestHandler, ABC):
                 'encrypted_columns': encrypted_columns
             }
             if 'resultLimit' in query_para.keys():
-                kwargs['limit'] = " limit {}".format(query_para['resultLimit'])
+                kwargs['limit'] = int(query_para['resultLimit'])
             c_e = ControllerDatabase(kwargs)
             c_e.do_create()
             return {}
@@ -325,7 +344,7 @@ class CreateHandler(tornado.web.RequestHandler, ABC):
         for i in range(size):
             col = columns[i]
             if int(col['length']) > 0 and col['type'].lower() not in ['int']:
-                part.append(col['name'] + " " + col['type']+"(" + col['length'] + ")")
+                part.append(col['name'] + " " + col['type'] + "(" + col['length'] + ")")
             else:
                 part.append(col['name'] + " " + col['type'])
             if col['encryption'].lower() == 'true':
@@ -382,11 +401,13 @@ class QueryComponentHandler(tornado.web.RequestHandler, ABC):
     @run_on_executor
     def _post(self, component_id=None):
         query_para = json.loads(self.request.body)
+        cx = test_connection(db_conn)
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
         db_info = cu.fetchall()
         cx.commit()
+        cu.close()
         jdbc = db_info[0][2]
         if jdbc[:13] == "jdbc:mysql://":
             host_port = jdbc[13:].split("/")[0]
@@ -471,19 +492,21 @@ class SchemaHandler(tornado.web.RequestHandler, ABC):
 
     @run_on_executor
     def get(self, component_id=None):
+        cx = test_connection(db_conn)
         cu = cx.cursor()
         cu.execute("SELECT id, name, connection_url, driver_class_name, "
                    "username, password, ping FROM p_datasource WHERE id={}".format(component_id))
         db_info = cu.fetchall()
-        jdbc = db_info[0][2]
-        if jdbc[:13] == "jdbc:mysql://":
-            db = jdbc[13:].split("/")[1]
+        connection_url = db_info[0][2]
+        if connection_url[:13] == "jdbc:mysql://":
+            db = connection_url[13:]
             cu.execute(
                 "SELECT table_name, col_info FROM p_db_meta WHERE database_name='{}' order by table_name".format(db))
             self.write(self.format_result(cu.fetchall()))
         else:
             self.write({})
         cx.commit()
+        cu.close()
 
     @staticmethod
     def format_result(tables_info):
