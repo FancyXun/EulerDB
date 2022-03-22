@@ -197,8 +197,9 @@ class OPECipher:
     input = 'INT'
     output = 'BIGINT'
 
-    def __init__(self):
-        self.cipher = OPE(b'ZvtU2iyA0E5byRp6YMxbsoEnk1vKPxtm6IcLt4ZxuK0=')
+    def __init__(self, key):
+        self.key = bytes.fromhex(sha256(key.encode('utf8')).hexdigest())
+        self.cipher = OPE(self.key)
 
     def encrypt(self, raw):
         return self.cipher.encrypt(int(raw))
@@ -211,40 +212,34 @@ class FuzzyCipher:
     input = 'STRING'
     output = 'STRING'
 
-    def __init__(self):
-        pass
+    def __init__(self, key):
+        self.cipher = AESCipher(key)
 
-    @staticmethod
-    def encrypt(raw):
+    def encrypt(self, raw):
         result = ""
         if raw.isalpha() or raw.isalnum() or raw.isdigit():
-            assert len(raw) >= 3
+            assert len(raw) >= 3, "the length of {} <= 3".format(raw)
             for i in range(len(raw) - 2):
-                result = result + AESCipher("points").encrypt(str(raw)[i: i + 3])
+                result = result + self.cipher.encrypt(str(raw)[i: i + 3])
         else:
-            assert len(raw) >= 2
+            assert len(raw) >= 2, "the length of {} <= 2".format(raw)
             for i in range(len(raw) - 1):
-                result = result + AESCipher("points").encrypt(str(raw)[i: i + 2])
+                result = result + self.cipher.encrypt(str(raw)[i: i + 2])
 
         return result
 
 
-# PAILLIER_N = 11214985453562592643
-# PAILLIER_P = 2670330847
-# PAILLIER_Q = 4199848669
-
-PAILLIER_N = 806267974661120203
-PAILLIER_P = 787659527
-PAILLIER_Q = 1023624989
-
-class PAILLIERCipher:
+class HomomorphicCipher:
     input = 'INT'
     output = 'STRING'
 
-    def __init__(self, n=PAILLIER_N, p=PAILLIER_P, q=PAILLIER_Q, precision=None):
-        self.pk = paillier.PaillierPublicKey(n)
-        self.sk = paillier.PaillierPrivateKey(self.pk, p, q)
-        self.precision = precision
+    def __init__(self, homomorphic_key):
+        if homomorphic_key:
+            self.p, self.q = homomorphic_key
+            self.n = self.p * self.q
+            self.pk = paillier.PaillierPublicKey(int(self.n))
+            self.sk = paillier.PaillierPrivateKey(self.pk, int(self.p), int(self.q))
+            self.precision = None
 
     def encrypt(self, raw):
         return str(self.pk.encrypt(int(raw), self.precision).ciphertext(False))
@@ -252,7 +247,6 @@ class PAILLIERCipher:
     def decrypt(self, enc):
         enc_list = str(enc).split(',')
         enc_value_list, agg_type = enc_list[:-1], enc_list[-1]
-        print(agg_type)
         n_square = self.pk.nsquare
         if agg_type == 'SUM':
             sum_enc_res = reduce(lambda x, y: (x * y) % n_square, map(lambda x: int(x), enc_value_list), 1)
@@ -267,3 +261,16 @@ class PAILLIERCipher:
             enc, num = enc.split(',')
         enc_number = paillier.EncryptedNumber(self.pk, int(enc))
         return self.sk.decrypt(enc_number) / int(num)
+
+
+if __name__ == '__main__':
+    text = 12345678
+    key = "abcdefghijklmnopqrstuvwxyz@#$%^&*()points"
+    homo_key = "806267974661120203,787659527,1023624989"
+    ope = OPECipher(key)
+    aes = AESCipher(key)
+    fuzzy = FuzzyCipher(key)
+    homo = HomomorphicCipher(homo_key)
+    print(ope.decrypt(ope.encrypt(text)))
+    print(aes.decrypt(aes.encrypt(str(text))))
+    print(homo.decrypt(homo.encrypt(text)))

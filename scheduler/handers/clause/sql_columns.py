@@ -9,9 +9,9 @@ class SQLColumns(Rewriter):
         enc_table_meta = self.db_meta[table]
         new_columns = []
         for col in columns:
-            if enc_table_meta['columns'][col]['PLAINTEXT']:
+            if enc_table_meta['columns'][col]['plaintext']:
                 new_columns.append(col)
             else:
                 new_columns.extend(
-                    list(enc_table_meta['columns'][col]['ENC_COLUMNS'].values()))
+                    list(enc_table_meta['columns'][col]['enc-cols'].values()))
         return new_columns

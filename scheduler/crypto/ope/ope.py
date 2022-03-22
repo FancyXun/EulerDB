@@ -14,8 +14,8 @@ import scheduler.crypto.ope.util as util
 from scheduler.crypto.ope.errors import InvalidCiphertextError, InvalidRangeLimitsError, OutOfRangeError
 
 
-DEFAULT_IN_RANGE_START = -2**31
-DEFAULT_IN_RANGE_END = 2**31 - 1
+DEFAULT_IN_RANGE_START = -2**63
+DEFAULT_IN_RANGE_END = 2**63 - 1
 DEFAULT_OUT_RANGE_START = -2**63
 DEFAULT_OUT_RANGE_END = 2**63 - 1
 

@@ -1,4 +1,3 @@
-import re
 import logging
 
 import mysql.connector
@@ -15,7 +14,8 @@ SQL_TYPES = [
     QueryType.INSERT,
     QueryType.DELETE,
     QueryType.UPDATE,
-    QueryType.DROP
+    QueryType.DROP,
+    QueryType.ALTER
 ]
 
 connection_pool = {}
@@ -30,6 +30,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.encrypted_cols = None
         self.rewriter = None
         self.meta = Delta()
+        self.table = None
 
     @staticmethod
     def connect_db(conn_info):
@@ -41,7 +42,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                 mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
                 passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
             connection_pool[db_key] = connection
-            print("mysql connected from {}" .format(db_key))
+            logging.info("mysql connected from {}" .format(db_key))
         else:
             connection = connection_pool[db_key]
         return connection.connection()
@@ -70,20 +71,24 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.encrypted_cols = encrypted_cols
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
-        enc_query, table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
-        if query_type == QueryType.SELECT and 'limit' in self.conn_info.keys():
-            enc_query = enc_query + self.conn_info['limit']
-        logging.info("Encrypted sql is {}".format(enc_query))
-        cursor = self.conn.cursor()
-
-        # add inject procedure
-        enc_query = self.inject_procedure(cursor, enc_query, use_cursor)
-
-        cursor.execute(enc_query)
-        if query_type == QueryType.CREATE:
-            assert self.encrypted_cols is not None
-        elif query_type == QueryType.DROP:
-            self.meta.delete_delta(self.conn_info['db'], table['table'])
+        try:
+            enc_query, self.table = self.dispatch(query, self.conn_info['db'], self.encrypted_cols)
+            if query_type == QueryType.SELECT and 'limit' in self.conn_info.keys():
+                enc_query = enc_query + self.conn_info['limit']
+            logging.info("Encrypted sql is {}".format(enc_query))
+            cursor = self.conn.cursor()
+        except Exception as e:
+            logging.info(e)
+            raise e
+        try:
+            enc_query = self.inject_procedure(cursor, enc_query, use_cursor)
+            cursor.execute(enc_query)
+        except Exception as e:
+            logging.info(e)
+            if query_type == QueryType.CREATE:
+                self.meta.delete_delta(self.conn_info['db'], self.table['table'])
+        if query_type == QueryType.DROP:
+            self.meta.delete_delta(self.conn_info['db'], self.table['table'])
         elif query_type == QueryType.SELECT:
             self.result = cursor.fetchall()
         else:
@@ -97,20 +102,21 @@ class RemoteExecutor(AbstractQueryExecutor):
     def get_sql_columns(self):
         return self.rewriter.select.select_columns
 
-    @staticmethod
-    def inject_procedure(cursor, enc_query, use_cursor=True):
+    def inject_procedure(self, cursor, enc_query, use_cursor=True):
         if 'SUM' not in enc_query and 'AVG' not in enc_query:
             return enc_query
         sum_feature_name_list, avg_feature_name_list, need_paillier_procedure, table_name, enc_query = \
-            Delta.get_paillier_procedure_info(enc_query)
-
+            Delta.get_paillier_procedure_info(enc_query, self.conn_info['db'], self.table)
         if not need_paillier_procedure:
             return enc_query
-        for feature_name in sum_feature_name_list:
-            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name, use_cursor)
-            enc_query = Delta.modify_sum_query(enc_query, feature_name, use_cursor)
-        for feature_name in avg_feature_name_list:
-            Delta.create_paillier_sum_procedure(cursor, feature_name, table_name, use_cursor)
-            enc_query = Delta.modify_avg_query(enc_query, feature_name, use_cursor)
+        for feature in sum_feature_name_list:
+            Delta.create_paillier_sum_procedure(cursor, feature, table_name, use_cursor)
+            enc_query = Delta.modify_sum_query(enc_query, feature[0], use_cursor)
+        for feature in avg_feature_name_list:
+            Delta.create_paillier_sum_procedure(cursor, feature, table_name, use_cursor)
+            enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor)
         enc_query = enc_query + ' limit 1'
         return enc_query
+
+    def get_db_meta(self):
+        return Delta().meta[self.conn_info['db']], self.table

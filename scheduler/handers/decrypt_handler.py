@@ -1,5 +1,5 @@
 from decimal import Decimal
-from scheduler.schema.metadata import CIPHERS_META
+from scheduler.crypto import encrypt
 from scheduler.handers.base import Handler
 
 
@@ -15,19 +15,27 @@ class DecryptHandler(Handler):
     def __rewrite__(self):
         pass
 
-    def decrypt(self, enc_result):
+    def decrypt(self, enc_result, select_columns, db_meta, table):
+        self.db_meta = db_meta
         result_state = self.executor.rewriter.select.select_state
         for row in enc_result:
             new_row = []
-            for state, col in zip(result_state, row):
-                if state == "PLAINTEXT":
-                    if isinstance(col, Decimal):
-                        col = float(col)
-                    new_row.append(col)
+            for col_name, state, col_val in zip(select_columns, result_state, row):
+                if state == "plaintext":
+                    if isinstance(col_val, Decimal):
+                        col_val = float(col_val)
+                    new_row.append(col_val)
                 else:
-                    new_row.append(self.__decrypt__(col, state))
+                    new_row.append(self.__decrypt__(table, col_val, col_name, state))
             self.result.append(tuple(new_row))
         return self.result
 
-    def __decrypt__(self, enc, cipher):
-        return CIPHERS_META[cipher].decrypt(enc)
+    def __decrypt__(self, table, col_val, col_name, state):
+        key = self.db_meta[table]['columns'][col_name]['key']
+        homo_key = self.db_meta[table]['columns'][col_name].get('homomorphic_key')
+        decryptor = {"symmetric": encrypt.AESCipher(key),
+                     "order-preserving": encrypt.OPECipher(key),
+                     "arithmetic": encrypt.HomomorphicCipher(homo_key)}
+        if self.db_meta[table]['columns'][col_name]['type'] in ['float', 'double']:
+            return eval(decryptor[state].decrypt(col_val)) / (2 ** 40)
+        return decryptor[state].decrypt(col_val)

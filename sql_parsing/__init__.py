@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
+import re
 import json
 from threading import Lock
 
@@ -87,6 +88,41 @@ def format(json, **kwargs):
 
     return Formatter(**kwargs).dispatch(json)
 
+
+def parse_alter_key(sql):
+    add_primary_key = re.match(r'alter table (.*?) add primary key\((.*?)\);', sql, re.M|re.I)
+    if add_primary_key:
+        return {'alter': add_primary_key.group(1),
+                'add primary key': [{'value': i} for i in add_primary_key.group(2).split(',')]}
+    drop_primary_key = re.match(r'alter table (.*?) drop primary key;', sql, re.M | re.I)
+    if drop_primary_key:
+        return {'alter': drop_primary_key.group(1), 'drop primary key': True}
+    add_foreign_key = re.match(r'alter table (.*?) add constraint (.*?) foreign key\((.*?)\) REFERENCES '
+                               r'(.*?)\((.*?)\);', sql, re.M | re.I)
+    if add_foreign_key:
+        return {'alter': add_foreign_key.group(1), 'add constraint': add_foreign_key.group(2),
+                'add foreign key': [{'value': i} for i in add_foreign_key.group(3).split(',')],
+                'reference_table': add_foreign_key.group(4),
+                'reference_feature': [{'value': i} for i in add_foreign_key.group(5).split(',')]}
+    drop_foreign_key = re.match(r'alter table (.*?) drop foreign key (.*?);', sql, re.M | re.I)
+    if drop_foreign_key:
+        return {'alter': drop_foreign_key.group(1), 'drop foreign key': drop_foreign_key.group(2)}
+    return {}
+
+
+def format_alter_key(json):
+    if json.get('add primary key'):
+        return f"alter table {json['alter']} " \
+               f"add primary key({','.join([i['value'] for i in json['add primary key']])});"
+    if json.get('drop primary key'):
+        return f"alter table {json['alter']} drop primary key;"
+    if json.get('add foreign key'):
+        return f"alter table {json['alter']} add constraint {json['add constraint']} " \
+               f"foreign key({','.join([i['value'] for i in json['add foreign key']])}) " \
+               f"REFERENCES {json['reference_table']}" \
+               f"({','.join([i['value'] for i in json['reference_feature']])});"
+    if json.get('drop foreign key'):
+        return f"alter table {json['alter']} drop foreign key {json['drop foreign key']};"
 
 _ = json.dumps
 

@@ -11,9 +11,9 @@ class SQLSet(Rewriter):
         result = {}
         enc_table_meta = self.db_meta[table]
         for k, v in set_value.items():
-            if enc_table_meta['columns'][k]['PLAINTEXT']:
+            if enc_table_meta['columns'][k]['plaintext']:
                 result[k] = v
             else:
-                for k1, v1 in enc_table_meta['columns'][k]['ENC_COLUMNS'].items():
+                for k1, v1 in enc_table_meta['columns'][k]['enc-cols'].items():
                     result[v1] = self.where.rewrite(v, table, k1)
         return result

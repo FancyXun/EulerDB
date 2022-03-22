@@ -7,7 +7,7 @@ class OrderBy(Rewriter):
 
     def rewrite(self, orderby_val, table, json=None):
         col = self.db_meta[table]['columns'][orderby_val['value']]
-        if col['PLAINTEXT']:
+        if col['plaintext']:
             return orderby_val
         else:
-            return {'value': col['ENC_COLUMNS']['OPE']}
+            return {'value': col['enc-cols']['order-preserving']}
