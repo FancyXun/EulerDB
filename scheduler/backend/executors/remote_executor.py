@@ -102,8 +102,11 @@ class RemoteExecutor(AbstractQueryExecutor):
         self.rewriter = Rewriter(self.str_db, self.encrypted_cols)
         return self.rewriter.rewrite_query(query)
 
-    def get_sql_columns(self):
+    def get_select_columns(self):
         return self.rewriter.select.select_columns
+
+    def get_select_types(self):
+        return self.rewriter.select.select_types
 
     def inject_procedure(self, cursor, enc_query, use_cursor=True):
         if 'SUM' not in enc_query and 'AVG' not in enc_query:

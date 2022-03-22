@@ -20,13 +20,14 @@ def invoke(query_info, query_sql, encrypted_cols=None, columns_info=False):
     """
     executor = RemoteExecutor(query_info)
     executor.call(query_sql, Parser(query_sql), encrypted_cols)
-    select_columns = executor.get_sql_columns()
+    select_columns = executor.get_select_columns()
+    select_types = executor.get_select_types()
     db_meta, table = executor.get_db_meta()
     if not columns_info:
         return DecryptQueryExecutor(DecryptHandler).decrypt(executor, query_info, select_columns, db_meta, table)
 
     return [DecryptQueryExecutor(DecryptHandler).decrypt(
-        executor, query_info, select_columns, db_meta, table), select_columns]
+        executor, query_info, select_columns, db_meta, table), [select_columns, select_types]]
 
 
 def rewrite(query, db, encrypted_cols=None):

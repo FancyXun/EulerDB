@@ -246,7 +246,7 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
                       "data": [],
                       "error": None}
         order_columns = []
-        for k, v in columns.items():
+        for k, v in zip(*columns):
             format_res['columns'].append(build_columns(k, v))
             order_columns.append(k)
         result = res["result"]
