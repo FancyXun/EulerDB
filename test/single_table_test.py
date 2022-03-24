@@ -154,5 +154,6 @@ class TestRewriterHandler(TestCase):
         resp = requests.post('http://localhost:8888/rewrite_query', json_data)
         print(resp.text)
 
+
 if __name__ == "__main__":
     unittest.main()
