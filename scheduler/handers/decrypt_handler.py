@@ -36,9 +36,4 @@ class DecryptHandler(Handler):
         decrypter = {"symmetric": encrypt.AESCipher(key),
                      "order-preserving": encrypt.OPECipher(key),
                      "arithmetic": encrypt.HomomorphicCipher(homo_key)}
-        if self.db_meta[table]['columns'][col_name]['type'] in ['float', 'double']:
-            return eval(decrypter[state].decrypt(col_val)) / (2 ** 40)
-        elif self.db_meta[table]['columns'][col_name]['type'] == 'int':
-            return int(decrypter[state].decrypt(col_val))
-        else:
-            return decrypter[state].decrypt(col_val)
+        return encrypt.decode(decrypter[state].decrypt(col_val), self.db_meta[table]['columns'][col_name]['type'])

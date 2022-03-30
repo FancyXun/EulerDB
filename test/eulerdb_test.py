@@ -5,6 +5,7 @@ import requests
 import mysql.connector
 import random
 from unittest import TestCase
+from decimal import Decimal
 
 
 def AllRange(f, sentences, words, start, end):
@@ -33,22 +34,31 @@ def get_data(num=float("inf")):
     sentences = generate_words()
     age = []
     score = []
+    edu = []
     comments = generate_words()
+    weight = []
+    height = []
     for i in range(len(sentences)):
         if i > num:
             break
         id_card.append(str(310310310 + i))
         age.append(str(random.randint(1, 100)))
         score.append(str(random.randint(60, 100)))
+        weight.append(str(round(random.random(), 4)))
+        edu.append(random.choice(['post', 'bach', 'high']))
+        height.append(str(round(300*random.random(), 12)))
 
-    return [id_card, sentences, age, score, comments]
+    return [id_card, sentences, age, score, comments, weight, edu, height]
 
 
-def req(_db_info, _cx, sql):
+def req(_db_info, _cx, sql, sql_local=None):
     _db_info['query'] = sql
     requests.post('http://localhost:8888/query', json.dumps(_db_info))
     cu = _cx.cursor()
-    cu.execute(sql)
+    if sql_local:
+        cu.execute(sql_local)
+    else:
+        cu.execute(sql)
     _cx.commit()
     cu.close()
 
@@ -59,21 +69,58 @@ def req_select(_db_info, _cx, sql):
     cu = _cx.cursor()
     cu.execute(sql)
     mysql_result = cu.fetchall()
+    mysql_result_rep = []
+    for i in mysql_result:
+        row = []
+        for j in i:
+            if isinstance(j, Decimal):
+                j = float(j)
+            row.append(j)
+        mysql_result_rep.append(tuple(row))
     cu.close()
-    return result.json()['result'], mysql_result
+    return result.json()['result'], mysql_result_rep
 
 
 class E2ETest(TestCase):
 
     @staticmethod
-    def create_table(_db_info, _cx):
-        _table = "table_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+    def create_spare_table(_db_info, _cx, _table="table_spare"):
+        sql = 'create table if not exists {}(' \
+              'age int primary key, ' \
+              'score int, ' \
+              'comments varchar(100));'.format(_table)
+
+        encrypted_columns = {
+            "age": {
+                "fuzzy": False,
+                "key": "abcdefgopqrst",
+                "arithmetic": True,
+                "homomorphic_key": [787659527, 1023624989],
+            }
+        }
+        _db_info['encrypted_columns'] = encrypted_columns
+        print("create table {}".format(_table))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql)
+        print("finished".format(_table))
+        print("-" * 100)
+        _db_info.pop('encrypted_columns')
+        return _table
+
+    @staticmethod
+    def create_table(_db_info, _cx, refer_table="table_spare"):
+        _table = "table_" + hashlib.md5(str(time.process_time()).encode('utf-8')).hexdigest()
         sql = 'create table if not exists {}(' \
               'id_card varchar(100), ' \
               'sentences varchar(100), ' \
               'age int, ' \
               'score int, ' \
-              'comments varchar(100)) '.format(_table)
+              'comments varchar(100), ' \
+              'weight float, ' \
+              'edu char(4), ' \
+              'height double, ' \
+              'primary key(age), ' \
+              'constraint {}_fk_test foreign key(age) references {}(age));'.format(_table, refer_table, refer_table)
 
         encrypted_columns = {
             "id_card": {
@@ -87,12 +134,37 @@ class E2ETest(TestCase):
             "age": {
                 "fuzzy": False,
                 "key": "abcdefgopqrst",
+                "arithmetic": True,
+                "homomorphic_key": [787659527, 1023624989],
+            },
+            "weight": {
+                "fuzzy": False,
+                "key": "abcdefgopqrst"
+            },
+            "edu": {
+                "fuzzy": True,
+                "key": "abcdefghisdfn"
+            },
+            "height": {
+                "fuzzy": False,
+                "key": "abcdefgopqrst"
             }
         }
         _db_info['encrypted_columns'] = encrypted_columns
         print("create table {}".format(_table))
         print("--" + "\n" + "--")
-        req(_db_info, _cx, sql)
+        sql_local = 'create table if not exists {}(' \
+              'id_card varchar(100), ' \
+              'sentences varchar(100), ' \
+              'age int, ' \
+              'score int, ' \
+              'comments varchar(100), ' \
+              'weight float, ' \
+              'edu char(4), ' \
+              'height double, ' \
+              'primary key(age), ' \
+              'constraint {}_local_fk_test foreign key(age) references {}(age));'.format(_table, refer_table, refer_table)
+        req(_db_info, _cx, sql, sql_local)
         print("finished".format(_table))
         print("-"*100)
         _db_info.pop('encrypted_columns')
@@ -108,8 +180,27 @@ class E2ETest(TestCase):
         print("-" * 100)
 
     @staticmethod
-    def insert_sql(_db_info, _cx, _table):
-        insert_data = get_data()
+    def drop_primary_key(_db_info, _cx, _table):
+        sql = 'alter table {} drop primary key;'.format(_table)
+        print("alter table {} drop primary key".format(_table))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql)
+        print("finished".format(_table))
+        print("-" * 100)
+
+    @staticmethod
+    def drop_foreign_key(_db_info, _cx, _table, refer_table="table_spare"):
+        sql = 'alter table {} drop foreign key {}_fk_test;'.format(_table, refer_table)
+        sql_local = 'alter table {} drop foreign key {}_local_fk_test;'.format(_table, refer_table)
+        print("alter table {} drop foreign key {}_fk_test".format(_table, refer_table))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql, sql_local)
+        print("finished".format(_table))
+        print("-" * 100)
+
+    @staticmethod
+    def insert_sql(_db_info, _cx, _table, num=float("inf")):
+        insert_data = get_data(num)
         print("insert table {}".format(_table))
         print("--" + "\n" + "--")
         for i in zip(*insert_data):
@@ -118,8 +209,12 @@ class E2ETest(TestCase):
                   'sentences, ' \
                   'age, ' \
                   'score, ' \
-                  'comments) values ( "' + \
-                  i[0] + '", "' + i[1] + '", ' + i[2] + ', ' + i[3] + ', "' + i[4] + '" )'
+                  'comments, ' \
+                  'weight, ' \
+                  'edu, ' \
+                  'height) values ( "' + \
+                  i[0] + '", "' + i[1] + '", ' + i[2] + ', ' + i[3] + ', "' + i[4] + '", ' + i[5] + ', "' + i[6] + \
+                  '", ' + i[7] + ' )'
             sql = sql.format(_table)
             req(_db_info, _cx, sql)
         print("finished".format(_table))
@@ -130,6 +225,10 @@ class E2ETest(TestCase):
         print("--" + "\n" + "--")
         select = ['select count(*) from {}'.format(_table),
                   'select * from {} limit 5'.format(_table),
+                  'select id_card, sentences, age, score, comments from {} limit 4'.format(_table),
+                  'select weight from {} limit 4'.format(_table),
+                  'select height from {} limit 4'.format(_table),
+                  'select edu from {} limit 4'.format(_table),
                   'select id_card, sentences, age from {} where age = 20 limit 5'.format(_table),
                   'select id_card, sentences, age, score  from {} where score = 60 limit 5'.format(_table),
                   'select id_card, sentences, age from {} where age > 40 limit 5'.format(_table),
@@ -145,6 +244,11 @@ class E2ETest(TestCase):
                   'select id_card, sentences from {} WHERE age = 30 limit 5'.format(_table),
                   'select max(score), min(score) from {} '.format(_table),
                   'select max(score), min(age) from {} '.format(_table),
+                  'select sum(score) from {} '.format(_table),
+                  'select sum(age) from {} '.format(_table),
+                  'select sum(age), avg(age) from {} '.format(_table),
+                  'select min(weight), max(weight) from {} '.format(_table),
+                  'select min(height), max(height) from {} '.format(_table),
                   'select id_card, sentences from {} where sentences like "%杭州光之树%" limit 5'.format(_table),
                   'select id_card, sentences, comments from {} where sentences like "光之树%中国上%" limit 5'.format(_table),
                   ]
@@ -218,11 +322,20 @@ if __name__ == "__main__":
 
     e2e = E2ETest()
 
+    table_spare = e2e.create_spare_table(database_info, mysql_cx, 'table_spare_test_0')
+
     table = e2e.create_table(database_info, mysql_cx)
     e2e.drop_table(database_info, mysql_cx, table)
 
-    table = e2e.create_table(database_info, mysql_cx)
-    e2e.insert_sql(database_info, mysql_cx, table)
+    table = e2e.create_table(database_info, mysql_cx, table_spare)
+
+    e2e.drop_foreign_key(database_info, mysql_cx, table, table_spare)
+
+    e2e.drop_primary_key(database_info, mysql_cx, table)
+
+    e2e.drop_table(database_info, mysql_cx, table_spare)
+
+    e2e.insert_sql(database_info, mysql_cx, table, 100)
 
     e2e.test_select_sql(database_info, mysql_cx, table)
 

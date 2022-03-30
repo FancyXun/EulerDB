@@ -78,13 +78,13 @@ class RemoteExecutor(AbstractQueryExecutor):
                     limit = self.conn_info['limit']
                     if self.rewriter.limit < 0:
                         enc_query = enc_query + " limit {}".format(limit)
+                enc_query = self.inject_procedure(enc_query, use_cursor)
             logging.info("Encrypted sql is {}".format(enc_query))
             cursor = self.conn.cursor()
         except Exception as e:
             logging.info(e)
             raise e
         try:
-            enc_query = self.inject_procedure(cursor, enc_query, use_cursor)
             cursor.execute(enc_query)
         except Exception as e:
             logging.info(e)
@@ -108,18 +108,18 @@ class RemoteExecutor(AbstractQueryExecutor):
     def get_select_types(self):
         return self.rewriter.select.select_types
 
-    def inject_procedure(self, cursor, enc_query, use_cursor=True):
-        if 'SUM' not in enc_query and 'AVG' not in enc_query:
+    def inject_procedure(self, enc_query, use_cursor=True):
+        if ' SUM(' not in enc_query and ' AVG(' not in enc_query:
             return enc_query
         sum_feature_name_list, avg_feature_name_list, need_paillier_procedure, table_name, enc_query = \
-            Delta.get_paillier_procedure_info(enc_query, self.conn_info['db'], self.table)
+            Delta.get_paillier_procedure_info(enc_query, self.str_db, self.table)
         if not need_paillier_procedure:
             return enc_query
         for feature in sum_feature_name_list:
-            Delta.create_paillier_sum_procedure(cursor, feature, table_name, use_cursor)
+            Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
             enc_query = Delta.modify_sum_query(enc_query, feature[0], use_cursor)
         for feature in avg_feature_name_list:
-            Delta.create_paillier_sum_procedure(cursor, feature, table_name, use_cursor)
+            Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
             enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor)
         enc_query = enc_query + ' limit 1'
         return enc_query

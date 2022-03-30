@@ -49,7 +49,8 @@ class Rewriter(Clause):
         for key in clause.keys():
             if key not in json.keys():
                 continue
-            func = self.__getattribute__(key)
+            func_key = 'select' if key == 'select_distinct' else key
+            func = self.__getattribute__(func_key)
             if isinstance(func, dict):
                 json = __inner__(json, key, func)
             else:
