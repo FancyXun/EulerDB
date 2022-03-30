@@ -20,10 +20,8 @@ class SQLValues(Rewriter):
     def encrypt_value(self, table, col, value, enc):
         key = self.db_meta[table]['columns'][col]['key']
         if isinstance(value, dict):
-            if self.db_meta[table]['columns'][col]['type'] in ['float', 'double']:
-                value = int(eval(value['literal']) * 2 ** 40)
-            else:
-                value = value['literal']
+            value = value['literal']
+        value = encrypt.encode(value, self.db_meta[table]['columns'][col]['type'])
         if enc == "order-preserving":
             return {'value': encrypt.OPECipher(key).encrypt(int(value))}
         if enc == "symmetric":
