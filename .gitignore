@@ -10,3 +10,4 @@ data/meta.json
 data/schema-euler.db
 
 .DS_Store
+words.txt

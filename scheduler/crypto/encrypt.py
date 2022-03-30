@@ -32,6 +32,59 @@ pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * chr(BLOCK_SIZE - len(s)
 unpad = lambda s: s[:-ord(s[len(s) - 1:])]
 
 
+def stretch(val):
+    # piecewise linear function [10**15, 10**42, 10**56, 10**65], [10**15, 10**19, 10**22, 10**24]
+    if val < 0:
+        return -stretch(-val)
+    if 10**15 >= val >= 0:
+        return val
+    if 10**42 >= val > 10**15:
+        return (val-10**15)/(10**42-10**15)*(10**19-10**15)+10**15
+    if 10**56 >= val > 10**42:
+        return (val-10**42)/(10**56-10**42)*(10**22-10**19)+10**19
+    if 10**65 >= val > 10**56:
+        return (val-10**56)/(10**65-10**56)*(10**24-10**22)+10**22
+
+
+def inverse_stretch(val):
+    # piecewise linear function [10**15, 10**19, 10**22, 10**24], [10**15, 10**42, 10**56, 10**65]
+    if val < 0:
+        return -stretch(-val)
+    if 10**15 >= val >= 0:
+        return val
+    if 10**19 >= val > 10**15:
+        return (val-10**15)/(10**19-10**15)*(10**42-10**15)+10**15
+    if 10**22 >= val > 10**19:
+        return (val-10**19)/(10**22-10**19)*(10**56-10**42)+10**42
+    if 10**24 >= val > 10**22:
+        return (val-10**22)/(10**24-10**22)*(10**65-10**56)+10**56
+
+
+def encode(val, val_type):
+    if val_type == 'float':
+        return int(val * 10 ** 12)
+    if val_type == 'double':
+        val = stretch(val)
+        return int(val * 10 ** 12)
+    return val
+
+
+def decode(val, val_type):
+    if val_type in ['int', 'float', 'double']:
+        try:
+            val = eval(val)
+        except:
+            val = val
+    if val_type == 'int':
+        return val
+    if val_type == 'float':
+        return val / 10 ** 12
+    if val_type == 'double':
+        val = inverse_stretch(val)
+        return val / 10 ** 12
+    return val
+
+
 class AESCrypto(object):
     AES_CBC_KEY = b'a\x14\x04.\x8a\xa2a\xec,\xf1\x07\xc2l\x19|`g\xae\xba\tl\xc4\xa7\xac$\x11\xef\x0f\xeaN\x01\xcf'
     AES_CBC_IV = b'\xd3|\xf6(\xc3\x15\x08\xeaq\xc4}\xbf\xc3\x95\\{'
@@ -277,7 +330,9 @@ class HomomorphicCipher:
         if ',' in str(enc):
             enc, num = enc.split(',')
         enc_number = paillier.EncryptedNumber(self.pk, int(enc))
-        return self.sk.decrypt(enc_number) / int(num)
+        if num == 1:
+            return int(self.sk.decrypt(enc_number))
+        return round(self.sk.decrypt(enc_number) / int(num), 4)
 
 
 if __name__ == '__main__':

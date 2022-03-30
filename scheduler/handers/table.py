@@ -40,6 +40,7 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
             continue
         val = element_type.get(list(col['type'].keys())[0].upper())
         for k, v in val.items():
+            primary_key_plus = primary_key if k == 'symmetric' else ''
             enc_col_name = random.choice(string.ascii_letters) + \
                            hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
             for t_k, t_v in col_type.items():
@@ -49,7 +50,7 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
                     enc_col_type = t_k + '(' + str(t_l) + ')'
                 else:
                     enc_col_type = v
-                enc_columns.append(enc_col_name + ' ' + enc_col_type + primary_key)
+                enc_columns.append(enc_col_name + ' ' + enc_col_type + primary_key_plus)
                 columns_kv[col_name]['enc-cols'].update({k: enc_col_name})
         if encrypted_cols[col['name']]['fuzzy']:
             enc_col_name = random.choice(string.ascii_letters) + \
@@ -69,10 +70,10 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
     constraints = create_table.get('constraint', [])
     constraints = [constraints] if isinstance(constraints, dict) else constraints
     for constraint in constraints:
-        print('constraint', constraint)
+        # print('constraint', constraint)
         enc_constraint.append(get_constraint_key(constraint, columns_kv, db))
     enc_constraint = "," + ",".join(enc_constraint) if enc_constraint else ""
-    query = 'CREATE TABLE ' + anonymous_table + '(' + ",".join(enc_columns) + enc_constraint + ');'
+    query = 'CREATE TABLE IF NOT EXISTS ' + anonymous_table + '(' + ",".join(enc_columns) + enc_constraint + ');'
     table_meta = {
         table_name: {
             'anonymous': anonymous_table,
