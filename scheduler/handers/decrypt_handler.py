@@ -31,6 +31,8 @@ class DecryptHandler(Handler):
         return self.result
 
     def __decrypt__(self, table, col_val, col_name, state):
+        if col_val is None:
+            return None
         if "." in col_name:
             table, col_name = col_name.split(".")
         key = self.db_meta[table]['columns'][col_name]['key']
