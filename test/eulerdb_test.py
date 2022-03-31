@@ -21,14 +21,14 @@ def generate_words():
     sentences = []
     words = ['杭州', '光之树', '大华', '中国', '集团', '公司', '上海', '腾讯', '有限', '因为', '研究生', '西交大']
     words = [words[random.randint(0, len(words) - 1)] for _ in range(8)]
-    AllRange(sentences, words, 0, 3)
+    AllRange(sentences, words, 0, 5)
     words = ['张江', '阿里', '百度', '科技', '北京', '深圳', '广州', '字节跳动', '云计算方向', '研究院', '天气', '大合唱']
     words = [words[random.randint(0, len(words) - 1)] for _ in range(8)]
-    AllRange(sentences, words, 0, 3)
+    AllRange(sentences, words, 0, 5)
     words = ['浙江', '疫情', '苏州', '南京', '成都', '四川', '重庆', '陕西', '灯光',
              '解决人口问题', '进行婚育补贴帮助', '人口生产任务', '高消费']
     words = [words[random.randint(0, len(words) - 1)] for _ in range(8)]
-    AllRange(sentences, words, 0, 3)
+    AllRange(sentences, words, 0, 5)
     return sentences
 
 
