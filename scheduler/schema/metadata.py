@@ -14,7 +14,7 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
     cfg = f.read()
     config = yaml.full_load(cfg)
     if config['meta']['type'] == 'mysql':
-        cx = mysql.connector.connect(
+        db_conn = mysql.connector.connect(
               host=config['meta']['mysql']["host"],
               database=config['meta']['mysql']["db"],
               user=config['meta']['mysql']["user"],
@@ -23,8 +23,22 @@ with open("config.yaml", 'r', encoding='utf-8') as f:
             )
         insert_sql = 'insert into p_db_meta values(%s,%s,%s,%s,%s,%s)'
     else:
-        cx = sqlite3.connect(config['meta']['sqlite'], check_same_thread=False)
+        db_conn = sqlite3.connect(config['meta']['sqlite'], check_same_thread=False)
         insert_sql = 'insert into p_db_meta values (?,?,?,?,?,?)'
+
+
+def test_connection(_db_conn):
+    try:
+        _db_conn.ping()
+    except:
+        _db_conn = mysql.connector.connect(
+            host=config['meta']['mysql']["host"],
+            database=config['meta']['mysql']["db"],
+            user=config['meta']['mysql']["user"],
+            passwd=config['meta']['mysql']["passwd"],
+            port=int(config['meta']['mysql']["port"])
+        )
+    return _db_conn
 
 
 def get_type_and_len(t_k, t_v):
@@ -80,12 +94,12 @@ class Delta(object):
     __instance = None
     meta = None
     table_json = None
-    cx = None
+    db_conn = None
 
     def __new__(cls, *args, **kwargs):
         if Delta.__instance is None:
             Delta.__instance = object.__new__(cls, *args, **kwargs)
-            cls.cx = cx
+            cls.db_conn = db_conn
             cls.meta = cls.load_delta()
         return Delta.__instance
 
@@ -106,16 +120,18 @@ class Delta(object):
 
     def delete_delta(self, db, table):
         self.meta[db].pop(table, None)
-        cu = self.cx.cursor()
+        self.db_conn = test_connection(self.db_conn)
+        cu = self.db_conn.cursor()
         sql = "delete from p_db_meta where database_name = '{}' and table_name = '{}'".format(db, table)
         cu.execute(sql)
         if config['meta']['type'] == 'mysql':
-            self.cx.commit()
+            self.db_conn.commit()
         else:
             cu.connection.commit()
 
     def update_db_meta(self, db_name, table_meta):
-        cu = self.cx.cursor()
+        self.db_conn = test_connection(self.db_conn)
+        cu = self.db_conn.cursor()
         rows = []
         for t_name, t_value in table_meta.items():
             table_name = t_name
@@ -125,14 +141,14 @@ class Delta(object):
                 rows.append((db_name, 'mysql', table_name, table_anonymous, col_str, ''))
         cu.executemany(insert_sql, rows)
         if config['meta']['type'] == 'mysql':
-            self.cx.commit()
+            self.db_conn.commit()
         else:
             cu.connection.commit()
 
     @classmethod
     def load_delta(cls):
         meta = {}
-        cu = cls.cx.cursor()
+        cu = cls.db_conn.cursor()
         cu.execute("select * from p_db_meta")
         db_meta = cu.fetchall()
         if not db_meta:
