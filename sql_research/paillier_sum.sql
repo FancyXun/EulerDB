@@ -37,5 +37,5 @@ select @sumRes;
 drop PROCEDURE pro_test;
 
 -- fast
-select sum from ( select @rownr:=@rownr+1 AS rowNumber, @sum := @sum * id % @nSquare as sum from test
+select sum from ( select @rownr:=@rownr+1 AS rowNumber, cast(@sum := @sum * id % @nSquare as DECIMAL(65,0)) as sum from test
 cross join (select @sum := 1) s ) tmp order by rowNumber desc limit 1;
