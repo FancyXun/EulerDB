@@ -1,4 +1,5 @@
 import logging
+import time
 
 import mysql.connector
 
@@ -67,6 +68,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         """
 
         """
+        start_time = time.time()
         query_type = parser.query_type
         self.encrypted_cols = encrypted_cols
         if query_type not in SQL_TYPES:
@@ -81,6 +83,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                 enc_query = self.inject_procedure(enc_query, use_cursor)
             logging.info("Encrypted sql is {}".format(enc_query))
             cursor = self.conn.cursor()
+            print("{} encrypt time is {}".format(query, time.time()-start_time))
         except Exception as e:
             logging.info(e)
             raise e

@@ -1,3 +1,5 @@
+import time
+
 from decimal import Decimal
 from scheduler.crypto import encrypt
 from scheduler.handers.base import Handler
@@ -16,6 +18,7 @@ class DecryptHandler(Handler):
         pass
 
     def decrypt(self, enc_result, select_columns, db_meta, table):
+        start_time = time.time()
         self.db_meta = db_meta
         result_state = self.executor.rewriter.select.select_state
         for row in enc_result:
@@ -28,6 +31,7 @@ class DecryptHandler(Handler):
                 else:
                     new_row.append(self.__decrypt__(table, col_val, col_name, state))
             self.result.append(tuple(new_row))
+        print("{} decrypt time is {}".format(self.executor.rewriter.origin_query, time.time() - start_time))
         return self.result
 
     def __decrypt__(self, table, col_val, col_name, state):
