@@ -1,5 +1,7 @@
 import logging
 import time
+import pandas as pd
+import numpy as np
 
 import mysql.connector
 
@@ -8,6 +10,7 @@ from scheduler.backend.executors.abstract_executor import AbstractQueryExecutor
 from scheduler.compile.keywords_lists import QueryType
 from dbutils.pooled_db import PooledDB
 from scheduler.schema.metadata import Delta
+from scheduler.crypto import encrypt
 
 SQL_TYPES = [
     QueryType.CREATE,
@@ -43,7 +46,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                 mysql.connector, 5, host=conn_info['host'], user=conn_info['user'],
                 passwd=conn_info['password'], db=conn_info['db'], port=conn_info['port'])
             connection_pool[db_key] = connection
-            logging.info("mysql connected from {}" .format(db_key))
+            logging.info("mysql connected from {}".format(db_key))
         else:
             connection = connection_pool[db_key]
         return connection.connection()
@@ -83,7 +86,7 @@ class RemoteExecutor(AbstractQueryExecutor):
                 enc_query = self.inject_procedure(enc_query, use_cursor)
             logging.info("Encrypted sql is {}".format(enc_query))
             cursor = self.conn.cursor()
-            print("{} encrypt time is {}".format(query, time.time()-start_time))
+            print("{} encrypt time is {}".format(query, time.time() - start_time))
         except Exception as e:
             logging.info(e)
             raise e
@@ -100,6 +103,58 @@ class RemoteExecutor(AbstractQueryExecutor):
         else:
             self.conn.commit()
         self.conn.close()
+
+    def batch_insert(self, batch_info):
+        columns = batch_info['columns']
+        delta, table = self.get_db_meta()
+        table = batch_info['table']
+        table_info = delta[table]
+        new_table = table_info['anonymous']
+        columns_info = table_info['columns']
+        new_columns = []
+        for col in columns:
+            if not columns_info[col]['plaintext']:
+                for enc, value in columns_info[col]['enc-cols'].items():
+                    new_columns.append(value)
+            else:
+                new_columns.append(col)
+        chunk_size = 10 ** 4 * 2
+        cursor = self.conn.cursor()
+        for chunk in pd.read_csv(batch_info['input'], chunksize=chunk_size, header=None):
+            data = np.transpose(chunk.values)
+            enc_data = []
+            for idx, col in enumerate(columns):
+                if not columns_info[col]['plaintext']:
+                    for enc, value in columns_info[col]['enc-cols'].items():
+                        if enc == "order-preserving":
+                            enc_data.append(
+                                self.batch_enc(
+                                    encrypt.OPECipher(columns_info[col]['key']).encrypt, int, (data[idx])))
+                        if enc == "symmetric":
+                            enc_data.append(
+                                self.batch_enc(
+                                    encrypt.AESCipher(columns_info[col]['key']).encrypt, str, (data[idx])))
+                        if enc == "fuzzy":
+                            enc_data.append(
+                                self.batch_enc(
+                                    encrypt.FuzzyCipher(columns_info[col]['key']).encrypt, str, (data[idx])))
+                else:
+                    enc_data.append(data[idx])
+            query = "insert into {} (".format(new_table) + ",".join(new_columns) + ") values(" \
+                    + ",".join(["%s"] * len(new_columns)) + ")"
+            print(np.asarray(enc_data).shape)
+            enc_data = np.transpose(np.asarray(enc_data)).tolist()
+            for idx, i in enumerate(enc_data):
+                cursor.execute(query, tuple(i))
+            self.conn.commit()
+        self.conn.close()
+
+    @staticmethod
+    def batch_enc(func, input_type, data):
+        enc_data = []
+        for i in data:
+            enc_data.append(func(input_type(i)))
+        return enc_data
 
     def dispatch(self, query):
         self.rewriter = Rewriter(self.str_db, self.encrypted_cols)

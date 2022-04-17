@@ -10,6 +10,9 @@ class ControllerDatabase(object):
         encrypted_cols = None
         if "encrypted_columns" in self.query_info.keys():
             encrypted_cols = self.query_info['encrypted_columns']
+        if 'batch_process' in self.query_info.keys():
+            execution_context.batch_process(self.query_info)
+            return {'result': []}
         result = execution_context.invoke(self.query_info, self.query_info['query'], encrypted_cols, columns_info=True)
         if result[0]:
             return {'result': result[0],
