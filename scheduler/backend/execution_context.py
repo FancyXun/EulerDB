@@ -33,7 +33,6 @@ def invoke(query_info, query_sql, encrypted_cols=None, columns_info=False):
 def batch_process(query_info):
     executor = RemoteExecutor(query_info)
     executor.batch_insert(query_info['batch_process'])
-    return
 
 
 def rewrite(query, db, encrypted_cols=None):
