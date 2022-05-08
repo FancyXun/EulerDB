@@ -132,25 +132,29 @@ class E2ETest(TestCase):
     def test_select_sql(self, _db_info, _cx, _table):
         print("select table {}".format(_table))
         print("--" + "\n" + "--")
-        select = ['select count(*) from {}'.format(_table),
-                  'select * from {} limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age = 20 limit 5'.format(_table),
-                  'select id_card, sentences, age, score  from {} where score = 60 limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age > 40 limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age < 10 limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age <= 10 limit 5'.format(_table),
-                  'select id_card, sentences, age, score from {} where score > 70 limit 5'.format(_table),
-                  'select * from {} where id_card = "310310314" and sentences = "杭州光之树大华公司中国集团上海腾讯有限"'.format(_table),
-                  'select * from {} where id_card = "310310320" or sentences = "杭州光之树大华中国公司集团上海腾讯有限"'.format(_table),
-                  'select id_card, sentences, age from {} order by age limit 5'.format(_table),
-                  'select distinct id_card, sentences, age from {} limit 5'.format(_table),
-                  'select distinct age, sentences, id_card from {} limit 5'.format(_table),
-                  'select max(age), min(age) from {}'.format(_table),
-                  'select id_card, sentences from {} WHERE age = 30 limit 5'.format(_table),
-                  'select max(score), min(score) from {} '.format(_table),
-                  'select max(score), min(age) from {} '.format(_table),
-                  'select id_card, sentences from {} where sentences like "%杭州光之树%" limit 5'.format(_table),
-                  'select id_card, sentences, comments from {} where sentences like "光之树%中国上%" limit 5'.format(_table),
+        select = [
+            'select count(*) from {}'.format(_table),
+            'select * from {} limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age = 20 limit 5'.format(_table),
+            'select id_card, sentences, age, score  from {} where score = 60 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age > 40 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age < 10 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age <= 10 limit 5'.format(_table),
+            'select id_card, sentences, age, score from {} where score > 70 limit 5'.format(_table),
+            'select * from {} where id_card = "310310314" and sentences = "杭州光之树大华公司中国集团上海腾讯有限"'.format(_table),
+            'select * from {} where id_card = "310310320" or sentences = "杭州光之树大华中国公司集团上海腾讯有限"'.format(_table),
+            'select id_card, sentences, age from {} order by age limit 5'.format(_table),
+            'select distinct id_card, sentences, age from {} limit 5'.format(_table),
+            'select distinct age, sentences, id_card from {} limit 5'.format(_table),
+            'select max(age), min(age) from {}'.format(_table),
+            'select id_card, sentences from {} WHERE age = 30 limit 5'.format(_table),
+            'select max(score), min(score) from {} '.format(_table),
+            'select max(score), min(age) from {} '.format(_table),
+            'select id_card, sentences from {} where sentences like "%杭州光之树%" limit 5'.format(_table),
+            'select id_card, sentences, comments from {} where sentences like "光之树%中国上%" limit 5'.format(_table),
+            'select id_card from (select id_card, sentences, '
+            'comments from {} where sentences like "%光之树%") as a'.format(_table)
+
                   ]
         for sql in select:
             r0, r1 = req_select(_db_info, _cx, sql)
