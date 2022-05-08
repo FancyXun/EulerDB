@@ -92,7 +92,9 @@ class RemoteExecutor(AbstractQueryExecutor):
                     limit = self.conn_info['limit']
                     if self.rewriter.limit < 0:
                         enc_query = enc_query + " limit {}".format(limit)
-                enc_query = self.inject_procedure(enc_query, use_cursor)
+                if not isinstance(self.table, dict):
+                    # todo: 长达支持table为dict
+                    enc_query = self.inject_procedure(enc_query, use_cursor)
             cursor = self.conn.cursor()
         except Exception as e:
             logger.info(e)
