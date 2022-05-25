@@ -12,7 +12,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 import mysql.connector
 
-from controller.rewriter import ControllerDatabase, ControllerRewriter
+from controller.rewriter import ControllerDatabase, ControllerRewriter, ControllerEncryptSql
 
 NUMBER_OF_EXECUTOR = 6
 
@@ -265,6 +265,79 @@ class QueryHandler(tornado.web.RequestHandler, ABC):
             data.append(json.dumps(format_row))
         format_res["data"] = "[" + ",".join(data) + "]"
         return format_res
+
+
+class EncryptSqlHandler(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+    ENCRYPT_KEY = "1234salt1234salt"
+    ENCRYPT_IV = "5678salt5678salt"
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+
+    @run_on_executor
+    def _post(self, *args, **kwargs):
+        query_para = json.loads(self.request.body)
+        if 'backend' in query_para.keys():
+            c_e = ControllerEncryptSql(query_para)
+            res = c_e.do_convert()
+            return res
+        query = query_para['sqlQuery']
+        while query[-1] == ";":
+            query = query[:-1]
+        data_source_id = query_para["jdbcDataSourceId"]
+        query = query
+        cx = test_connection(db_conn)
+        cu = cx.cursor()
+        cu.execute("SELECT id, name, connection_url, driver_class_name, "
+                   "username, password, ping FROM p_datasource WHERE id={}".format(data_source_id))
+        db_info = cu.fetchall()
+        cx.commit()
+        cu.close()
+        jdbc = db_info[0][2]
+        if jdbc[:13] == "jdbc:mysql://":
+            host_port = jdbc[13:].split("/")[0]
+            host = host_port.split(":")[0]
+            port = host_port.split(":")[1]
+            db = jdbc[13:].split("/")[1]
+            user = db_info[0][4]
+            password = db_info[0][5]
+            kwargs = {
+                'host': host,
+                'db': db,
+                'user': user,
+                'password': password,
+                'query': query,
+                'port': int(port),
+            }
+            c_e = ControllerEncryptSql(kwargs)
+            res = c_e.do_convert()
+            return res
+        else:
+            return {'encrypt_sql': ''}
+
+    @gen.coroutine
+    def post(self, *args, **kwargs):
+        try:
+            result = yield self._post(*args, **kwargs)
+            self.write(result)
+        except HTTPError as e:
+            self.write(e)
+        except Exception as e:
+            self.write({'error': str(e)})
+            logger.error(e)
+            raise HTTPError(404, "No results")
 
 
 class CreateHandler(tornado.web.RequestHandler, ABC):

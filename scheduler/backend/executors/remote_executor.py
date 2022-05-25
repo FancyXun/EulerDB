@@ -115,6 +115,15 @@ class RemoteExecutor(AbstractQueryExecutor):
         logger.info("Execute:{}".format(time.time() - start_time))
         self.conn.close()
 
+    def encrypt_sql(self, query):
+        try:
+            logger.info("SQL:{}".format(query))
+            enc_query, _ = self.dispatch(query)
+        except Exception as e:
+            logger.info(e)
+            raise e
+        return enc_query
+
     def batch_insert(self, batch_info):
         columns = batch_info['columns']
         delta, table = self.get_db_meta()
