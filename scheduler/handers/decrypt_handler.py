@@ -23,7 +23,7 @@ class DecryptHandler(Handler):
             for col_name, state, col_val in zip(select_columns, result_state, row):
                 if state == "plaintext":
                     if isinstance(col_val, Decimal):
-                        col_val = float(col_val)
+                        col_val = eval(col_val.__str__())
                     new_row.append(col_val)
                 else:
                     new_row.append(self.__decrypt__(table, col_val, col_name, state))

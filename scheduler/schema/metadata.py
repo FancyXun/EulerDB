@@ -65,7 +65,7 @@ element_type = {
 
 
 fuzzy_type_fixed = 'VARCHAR(2000)'
-arithmetic_type_fixed = 'VARCHAR(2000)'
+arithmetic_type_fixed = 'Decimal(65,0)'
 
 
 FUNC_CIPHERS = {
@@ -151,6 +151,22 @@ class Delta(object):
         return meta
 
     @staticmethod
+    def set_sum_feature(cursor, feature, table_name):
+        feature_name, n_square = feature
+        new_feature_name = feature_name.replace('.', '_')
+        cursor.execute('SET @rownr=0;')
+        cursor.execute('SET @sum=1;')
+        sum_sql = 'select sum from (select @rownr:=@rownr+1, @sum:=(@sum*{})%{} as sum from {} ' \
+                  'order by @rownr desc limit 1) tmp'.format(feature_name, n_square, table_name)
+        set_sql = f'set @sum{new_feature_name} = ({sum_sql})'
+        cursor.execute(set_sql)
+
+    @staticmethod
+    def set_total_feature_num(cursor, table_name):
+        cursor.execute(f'SET @numTotalFeature = (select count(*) from {table_name});')
+
+
+    @staticmethod
     def create_paillier_sum_procedure(cursor, feature, table_name, use_cursor):
         if not use_cursor:
             set_concat_length_global_query = 'SET GLOBAL group_concat_max_len = 18446744073709551615'
@@ -213,9 +229,10 @@ class Delta(object):
         return enc_query.replace('SUM({})'.format(feature_name), '@sum{}'.format(new_feature_name))
 
     @staticmethod
-    def modify_avg_query(enc_query, feature_name, use_cursor):
+    def modify_avg_query(enc_query, feature_name, use_cursor, total_feature=None):
         new_feature_name = feature_name.replace('.', '_')
         if not use_cursor:
             return enc_query.replace('AVG({})'.format(feature_name), "CONCAT(GROUP_CONCAT({}), ',AVG')".format(new_feature_name))
+        num_feature_name = 'TotalFeature' if not total_feature else total_feature
         return enc_query.replace('AVG({})'.format(feature_name), "concat(@sum{}, ',',@num{})".format(new_feature_name,
-                                                                                                     new_feature_name))
+                                                                                                     num_feature_name))

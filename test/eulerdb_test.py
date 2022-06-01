@@ -8,24 +8,27 @@ from unittest import TestCase
 from decimal import Decimal
 
 
-def AllRange(f, sentences, words, start, end):
+def AllRange(sentences, words, start, end):
     if start == end:
         sentences.append("".join(words))
     for m in range(start, end + 1):
         words[m], words[start] = words[start], words[m]
-        AllRange(f, sentences, words, start + 1, end)
+        AllRange(sentences, words, start + 1, end)
         words[m], words[start] = words[start], words[m]
 
 
 def generate_words():
     sentences = []
-    with open("words.txt", 'a+') as f:
-        words = ['杭州', '光之树', '大华', '中国', '集团', '公司', '上海', '腾讯', '有限']
-        AllRange(f, sentences, words, 0, 5)
-        words = ['张江', '阿里', '百度', '科技', '北京', '深圳', '广州', '字节跳动']
-        AllRange(f, sentences, words, 0, 5)
-        words = ['浙江', '疫情', '苏州', '南京', '成都', '四川', '重庆', '陕西']
-        AllRange(f, sentences, words, 0, 5)
+    words = ['杭州', '光之树', '大华', '中国', '集团', '公司', '上海', '腾讯', '有限', '因为', '研究生', '西交大']
+    words = [words[random.randint(0, len(words) - 1)] for _ in range(8)]
+    AllRange(sentences, words, 0, 5)
+    words = ['张江', '阿里', '百度', '科技', '北京', '深圳', '广州', '字节跳动', '云计算方向', '研究院', '天气', '大合唱']
+    words = [words[random.randint(0, len(words) - 1)] for _ in range(8)]
+    AllRange(sentences, words, 0, 5)
+    words = ['浙江', '疫情', '苏州', '南京', '成都', '四川', '重庆', '陕西', '灯光',
+             '解决人口问题', '进行婚育补贴帮助', '人口生产任务', '高消费']
+    words = [words[random.randint(0, len(words) - 1)] for _ in range(8)]
+    AllRange(sentences, words, 0, 5)
     return sentences
 
 
@@ -56,6 +59,7 @@ def req(_db_info, _cx, sql, sql_local=None):
     requests.post('http://localhost:8888/query', json.dumps(_db_info))
     cu = _cx.cursor()
     if sql_local:
+        print(sql_local)
         cu.execute(sql_local)
     else:
         cu.execute(sql)
@@ -69,43 +73,11 @@ def req_select(_db_info, _cx, sql):
     cu = _cx.cursor()
     cu.execute(sql)
     mysql_result = cu.fetchall()
-    mysql_result_rep = []
-    for i in mysql_result:
-        row = []
-        for j in i:
-            if isinstance(j, Decimal):
-                j = float(j)
-            row.append(j)
-        mysql_result_rep.append(tuple(row))
     cu.close()
-    return result.json()['result'], mysql_result_rep
+    return result.json()['result'], mysql_result
 
 
 class E2ETest(TestCase):
-
-    @staticmethod
-    def create_spare_table(_db_info, _cx, _table="table_spare"):
-        sql = 'create table if not exists {}(' \
-              'age int primary key, ' \
-              'score int, ' \
-              'comments varchar(100));'.format(_table)
-
-        encrypted_columns = {
-            "age": {
-                "fuzzy": False,
-                "key": "abcdefgopqrst",
-                "arithmetic": True,
-                "homomorphic_key": [787659527, 1023624989],
-            }
-        }
-        _db_info['encrypted_columns'] = encrypted_columns
-        print("create table {}".format(_table))
-        print("--" + "\n" + "--")
-        req(_db_info, _cx, sql)
-        print("finished".format(_table))
-        print("-" * 100)
-        _db_info.pop('encrypted_columns')
-        return _table
 
     @staticmethod
     def create_table(_db_info, _cx, refer_table="table_spare"):
@@ -118,9 +90,7 @@ class E2ETest(TestCase):
               'comments varchar(100), ' \
               'weight float, ' \
               'edu char(4), ' \
-              'height double, ' \
-              'primary key(age), ' \
-              'constraint {}_fk_test foreign key(age) references {}(age));'.format(_table, refer_table, refer_table)
+              'height double);'.format(_table)
 
         encrypted_columns = {
             "id_card": {
@@ -153,18 +123,7 @@ class E2ETest(TestCase):
         _db_info['encrypted_columns'] = encrypted_columns
         print("create table {}".format(_table))
         print("--" + "\n" + "--")
-        sql_local = 'create table if not exists {}(' \
-              'id_card varchar(100), ' \
-              'sentences varchar(100), ' \
-              'age int, ' \
-              'score int, ' \
-              'comments varchar(100), ' \
-              'weight float, ' \
-              'edu char(4), ' \
-              'height double, ' \
-              'primary key(age), ' \
-              'constraint {}_local_fk_test foreign key(age) references {}(age));'.format(_table, refer_table, refer_table)
-        req(_db_info, _cx, sql, sql_local)
+        req(_db_info, _cx, sql)
         print("finished".format(_table))
         print("-"*100)
         _db_info.pop('encrypted_columns')
@@ -180,11 +139,54 @@ class E2ETest(TestCase):
         print("-" * 100)
 
     @staticmethod
+    def add_primary_key(_db_info, _cx, _table, column_str='age'):
+        sql = 'alter table {} add primary key({});'.format(_table, column_str)
+        print("alter table {} add primary key({})".format(_table, column_str))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql)
+        print("finished".format(_table))
+        print("-" * 100)
+
+    @staticmethod
     def drop_primary_key(_db_info, _cx, _table):
         sql = 'alter table {} drop primary key;'.format(_table)
         print("alter table {} drop primary key".format(_table))
         print("--" + "\n" + "--")
         req(_db_info, _cx, sql)
+        print("finished".format(_table))
+        print("-" * 100)
+
+    @staticmethod
+    def add_foreign_key(_db_info, _cx, _table, refer_table='table_spare', column_str='age'):
+        def create_spare_table(_db_info, _cx, _table="table_spare"):
+            sql = 'create table if not exists {}(' \
+                  'age int primary key, ' \
+                  'score int, ' \
+                  'comments varchar(100));'.format(_table)
+
+            encrypted_columns = {
+                "age": {
+                    "fuzzy": False,
+                    "key": "abcdefgopqrst",
+                    "arithmetic": True,
+                    "homomorphic_key": [787659527, 1023624989],
+                }
+            }
+            _db_info['encrypted_columns'] = encrypted_columns
+            print("create table {}".format(_table))
+            print("--" + "\n" + "--")
+            req(_db_info, _cx, sql)
+            print("finished".format(_table))
+            print("-" * 100)
+            _db_info.pop('encrypted_columns')
+            return _table
+
+        refer_table = create_spare_table(_db_info, _cx, refer_table)
+        sql = 'alter table {} add constraint {}_fk_test foreign key({}) references {}({});'.format(_table, refer_table, column_str, refer_table, column_str)
+        sql_local = 'alter table {} add constraint {}_local_fk_test foreign key({}) references {}({});'.format(_table, refer_table, column_str, refer_table, column_str)
+        print("alter table {} add foreign key {}_fk_test".format(_table, refer_table))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql, sql_local)
         print("finished".format(_table))
         print("-" * 100)
 
@@ -255,11 +257,39 @@ class E2ETest(TestCase):
         for sql in select:
             r0, r1 = req_select(_db_info, _cx, sql)
             r0 = [tuple(i) for i in r0]
+            # print('r0',r0)
+            # print('r1',r1)
             try:
                 self.assertEqual(r0, r1, 'The sql result is not equal {}'.format(sql))
             except Exception as e:
                 print(e)
-        print("finished".format(_table))
+        print("finished {}".format(_table))
+        print("-" * 100)
+
+    def test_two_tables(self, _db_info, _cx, _table1, _table2):
+        select = \
+            [
+                'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.age limit 10'
+                 .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+                # fixme:bug
+                'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.score limit 10'
+                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+                f'SELECT {_table1}.id_card FROM {_table1} LEFT JOIN {_table2} ON {_table1}.id_card = {_table2}.id_card limit 10',
+                'SELECT {}.id_card, {}.score, {}.score FROM {} LEFT JOIN {} ON {}.score = {}.score limit 10'
+                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+                'SELECT {}.id_card, {}.score, {}.score FROM {} RIGHT JOIN {} ON {}.score = {}.score limit 10'
+                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+                'SELECT {}.id_card, {}.age, {}.age FROM {} RIGHT JOIN {} ON {}.age = {}.age limit 10'
+                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+            ]
+        for sql in select:
+            r0, r1 = req_select(_db_info, _cx, sql)
+            r0 = [tuple(i) for i in r0]
+            try:
+                self.assertEqual(r0, r1, 'The sql result is not equal {}'.format(sql))
+            except Exception as e:
+                print(e)
+        print("finished {} {}".format(_table1, _table2))
         print("-" * 100)
 
     @staticmethod
@@ -322,27 +352,28 @@ if __name__ == "__main__":
 
     e2e = E2ETest()
 
-    table_spare = e2e.create_spare_table(database_info, mysql_cx, 'table_spare_test_0')
-
+    # test1
     table = e2e.create_table(database_info, mysql_cx)
-    e2e.drop_table(database_info, mysql_cx, table)
-
-    table = e2e.create_table(database_info, mysql_cx, table_spare)
-
-    e2e.drop_foreign_key(database_info, mysql_cx, table, table_spare)
-
+    e2e.add_primary_key(database_info, mysql_cx, table)
     e2e.drop_primary_key(database_info, mysql_cx, table)
-
-    e2e.drop_table(database_info, mysql_cx, table_spare)
-
-    e2e.insert_sql(database_info, mysql_cx, table, 100)
-
-    e2e.test_select_sql(database_info, mysql_cx, table)
-
-    e2e.update_sql(database_info, mysql_cx, table)
-
-    e2e.delete_sql(database_info, mysql_cx, table)
-
-    e2e.test_select_sql(database_info, mysql_cx, table)
-
+    e2e.add_foreign_key(database_info, mysql_cx, table, refer_table='table_spa_test')
+    e2e.drop_foreign_key(database_info, mysql_cx, table, refer_table='table_spa_test')
     e2e.drop_table(database_info, mysql_cx, table)
+
+    # test2
+    table = e2e.create_table(database_info, mysql_cx)
+    e2e.insert_sql(database_info, mysql_cx, table, 50)
+    e2e.test_select_sql(database_info, mysql_cx, table)
+    e2e.update_sql(database_info, mysql_cx, table)
+    e2e.delete_sql(database_info, mysql_cx, table)
+    e2e.test_select_sql(database_info, mysql_cx, table)
+    e2e.drop_table(database_info, mysql_cx, table)
+
+    # test3
+    table1 = e2e.create_table(database_info, mysql_cx)
+    table2 = e2e.create_table(database_info, mysql_cx)
+    e2e.insert_sql(database_info, mysql_cx, table1)
+    e2e.insert_sql(database_info, mysql_cx, table2)
+    e2e.test_two_tables(database_info, mysql_cx, table1, table2)
+    e2e.drop_table(database_info, mysql_cx, table1)
+    e2e.drop_table(database_info, mysql_cx, table2)

@@ -115,12 +115,16 @@ class RemoteExecutor(AbstractQueryExecutor):
             Delta.get_paillier_procedure_info(enc_query, self.str_db, self.table)
         if not need_paillier_procedure:
             return enc_query
+        for feature in set(sum_feature_name_list+avg_feature_name_list):
+            Delta.set_sum_feature(self.conn.cursor(), feature, table_name)
+        if avg_feature_name_list:
+            Delta.set_total_feature_num(self.conn.cursor(), table_name)
         for feature in sum_feature_name_list:
-            Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
+            # Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
             enc_query = Delta.modify_sum_query(enc_query, feature[0], use_cursor)
         for feature in avg_feature_name_list:
-            Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
-            enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor)
+            # Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
+            enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor, 'TotalFeature')
         enc_query = enc_query + ' limit 1'
         return enc_query
 
