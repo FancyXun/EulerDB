@@ -109,6 +109,7 @@ class RemoteExecutor(AbstractQueryExecutor):
         return self.rewriter.select.select_types
 
     def inject_procedure(self, enc_query, use_cursor=True):
+        # todo: string match is workaround
         if ' SUM(' not in enc_query and ' AVG(' not in enc_query:
             return enc_query
         sum_feature_name_list, avg_feature_name_list, need_paillier_procedure, table_name, enc_query = \
