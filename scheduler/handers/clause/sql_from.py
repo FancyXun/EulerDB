@@ -22,6 +22,26 @@ class SQLFrom(Rewriter):
         if isinstance(table, str):
             return self.db_meta[table]['anonymous']
 
+        if isinstance(table, dict):
+            # 可能是select 嵌套, 从table中获取真正的table_name,
+            # todo: 如何确定table name和被选中的column之间的关系
+            def get_table(k_word, _from):
+                if k_word == 'from' and isinstance(_from, str):
+                    return _from
+                if isinstance(_from, dict):
+                    for _k, _v in _from.items():
+                        r = get_table(_k, _v)
+                        if r is None:
+                            continue
+                        return r
+                return None
+
+            for k, v in table.items():
+                table_name = get_table(k, v)
+                if table_name is not None:
+                    table = table_name
+                    break
+
     def join(self, t_value):
         if isinstance(t_value, dict):
             result = {}

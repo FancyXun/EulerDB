@@ -27,6 +27,19 @@ class ControllerDatabase(object):
         execution_context.invoke(self.query_info, query, encrypted_cols, columns_info=True)
 
 
+class ControllerEncryptSql(object):
+
+    def __init__(self, data):
+        self.query_info = data
+
+    def do_convert(self):
+        result = execution_context.encrypt_sql(self.query_info, self.query_info['query'])
+        if result:
+            return {'encrypt_sql': result}
+        else:
+            return {'encrypt_sql': ''}
+
+
 class ControllerRewriter(object):
 
     def __init__(self, data):

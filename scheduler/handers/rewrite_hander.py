@@ -51,13 +51,55 @@ class Rewriter(Clause):
                 continue
             # todo
             func_key = 'select' if key == 'select_distinct' else key
+            if key == 'from':
+                # 可能是嵌套的select
+                if 'value' in json[key]:
+                    json[key]['value'] = self.rewrite_clause(json[key]['value'])
+                    continue
             func = self.__getattribute__(func_key)
             if isinstance(func, dict):
                 json = __inner__(json, key, func)
             else:
                 json[key] = func.rewrite(json[key], table, json=source_json)
+
         # record json in Delta
         Delta.table_json = json
         if 'alter' in json:
             return format_alter_key(json), table
         return format(json), table
+
+    def rewrite_clause(self, json):
+        source_json = copy.deepcopy(json)
+        for key in table_key:
+            if key in json.keys():
+                table = json[key]
+                break
+        else:
+            raise Exception("no table found in sql {}".format(self.origin_query))
+
+        def __inner__(inner_json, inner_key, _func):
+            if isinstance(inner_json, dict):
+                if isinstance(inner_json[inner_key], dict):
+                    for _k, _v in inner_json[inner_key].items():
+                        tmp = __inner__(_v, _k, _func)
+                        inner_json[inner_key][_k] = tmp
+                    return inner_json
+            else:
+                return func[inner_key].rewrite(inner_json, table, json=source_json)
+
+        for key in clause.keys():
+            if key not in json.keys():
+                continue
+            # todo
+            func_key = 'select' if key == 'select_distinct' else key
+            if key == 'from':
+                # 可能是嵌套的select
+                if 'value' in json[key]:
+                    json[key]['value'] = self.rewrite_clause(json[key]['value'])
+                    continue
+            func = self.__getattribute__(func_key)
+            if isinstance(func, dict):
+                json = __inner__(json, key, func)
+            else:
+                json[key] = func.rewrite(json[key], table, json=source_json)
+        return json

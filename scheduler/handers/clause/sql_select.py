@@ -1,4 +1,4 @@
-import collections
+from scheduler.handers.clause.utils import get_nest_table
 from scheduler.schema.metadata import FUNC_CIPHERS
 from scheduler.handers.clause.rewriter import Rewriter
 
@@ -11,6 +11,11 @@ class SQLSelect(Rewriter):
         self.select_state = []
 
     def rewrite(self, select_val, table, cipher='symmetric', json=None):
+        if isinstance(table, dict):
+            # 可能是select 嵌套, 从table中获取真正的table_name,
+            # todo: 如何确定table name和被选中的column之间的关系
+            table = get_nest_table(table)
+
         if select_val == "*":
             result = []
             for idx, (k, v) in enumerate(self.db_meta[table]['columns'].items()):

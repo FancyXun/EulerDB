@@ -30,10 +30,14 @@ def invoke(query_info, query_sql, encrypted_cols=None, columns_info=False):
         executor, query_info, select_columns, db_meta, table), [select_columns, select_types]]
 
 
+def encrypt_sql(query_info, query_sql):
+    executor = RemoteExecutor(query_info)
+    return executor.encrypt_sql(query_sql)
+
+
 def batch_process(query_info):
     executor = RemoteExecutor(query_info)
     executor.batch_insert(query_info['batch_process'])
-    return
 
 
 def rewrite(query, db, encrypted_cols=None):

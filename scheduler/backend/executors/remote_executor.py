@@ -24,6 +24,12 @@ SQL_TYPES = [
 
 connection_pool = {}
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler('euler_db.log')
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+
 
 class RemoteExecutor(AbstractQueryExecutor):
     def __init__(self, conn_info):
@@ -71,29 +77,33 @@ class RemoteExecutor(AbstractQueryExecutor):
         """
 
         """
-        start_time = time.time()
         query_type = parser.query_type
         self.encrypted_cols = encrypted_cols
         if query_type not in SQL_TYPES:
             raise NotImplementedError("Not support {} sql type".format(query_type))
         try:
+            logger.info("SQL:{}".format(query))
+            start_time = time.time()
             enc_query, self.table = self.dispatch(query)
+            logger.info("Encrypt SQL:{}".format(enc_query))
+            logger.info("Encrypt:{}".format(time.time() - start_time))
             if query_type == QueryType.SELECT:
                 if 'limit' in self.conn_info.keys():
                     limit = self.conn_info['limit']
                     if self.rewriter.limit < 0:
                         enc_query = enc_query + " limit {}".format(limit)
-                enc_query = self.inject_procedure(enc_query, use_cursor)
-            logging.info("Encrypted sql is {}".format(enc_query))
+                if not isinstance(self.table, dict):
+                    # todo: 长达支持table为dict
+                    enc_query = self.inject_procedure(enc_query, use_cursor)
             cursor = self.conn.cursor()
-            print("{} encrypt time is {}".format(query, time.time() - start_time))
         except Exception as e:
-            logging.info(e)
+            logger.info(e)
             raise e
+        start_time = time.time()
         try:
             cursor.execute(enc_query)
         except Exception as e:
-            logging.info(e)
+            logger.info(e)
             if query_type == QueryType.CREATE:
                 self.meta.delete_delta(self.str_db, self.table['table'])
         if query_type == QueryType.DROP:
@@ -102,7 +112,17 @@ class RemoteExecutor(AbstractQueryExecutor):
             self.result = cursor.fetchall()
         else:
             self.conn.commit()
+        logger.info("Execute:{}".format(time.time() - start_time))
         self.conn.close()
+
+    def encrypt_sql(self, query):
+        try:
+            logger.info("SQL:{}".format(query))
+            enc_query, _ = self.dispatch(query)
+        except Exception as e:
+            logger.info(e)
+            raise e
+        return enc_query
 
     def batch_insert(self, batch_info):
         columns = batch_info['columns']
@@ -142,7 +162,6 @@ class RemoteExecutor(AbstractQueryExecutor):
                     enc_data.append(data[idx])
             query = "insert into {} (".format(new_table) + ",".join(new_columns) + ") values(" \
                     + ",".join(["%s"] * len(new_columns)) + ")"
-            print(np.asarray(enc_data).shape)
             enc_data = np.transpose(np.asarray(enc_data)).tolist()
             for idx, i in enumerate(enc_data):
                 cursor.execute(query, tuple(i))
