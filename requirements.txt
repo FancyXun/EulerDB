@@ -4,3 +4,4 @@ cryptography == 36.0.1
 Crypto == 1.4.1
 tornado == 6.1
 phe == 1.4.0
+pandas == 1.1.5
