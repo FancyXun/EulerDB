@@ -1,4 +1,11 @@
 from scheduler.backend import execution_context
+import yaml
+
+with open("config.yaml", 'r', encoding='utf-8') as f:
+    cfg = f.read()
+    config = yaml.full_load(cfg)
+    host = config['back_db'][config['back_db']['type']]["host"]
+    port = config['back_db'][config['back_db']['type']]["port"]
 
 
 class ControllerDatabase(object):
@@ -33,8 +40,8 @@ class ControllerDatabase_jar(object):
         self.query_info = data
 
     def do_query(self):
-        self.query_info['host'] = '127.0.0.1'
-        self.query_info['port'] = '3306'
+        self.query_info['host'] = host
+        self.query_info['port'] = port
         result = execution_context.invoke(self.query_info, self.query_info['query'], None, columns_info=True)
         if result[0]:
             return {'result': result[0],

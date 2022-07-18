@@ -7,3 +7,9 @@ meta:
         db: "eulerdb_schema"
         user: "root"
         passwd: "root"
+
+back_db:
+    type: "mysql"
+    mysql:
+        host: "127.0.0.1"
+        port: "3306"
