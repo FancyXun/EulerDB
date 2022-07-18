@@ -12,7 +12,7 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 import mysql.connector
 
-from controller.rewriter import ControllerDatabase, ControllerRewriter, ControllerEncryptSql
+from controller.rewriter import ControllerDatabase, ControllerRewriter, ControllerEncryptSql, ControllerDatabase_jar
 
 NUMBER_OF_EXECUTOR = 6
 
@@ -113,6 +113,40 @@ class PostHandler(BasePostRequestHandler, ABC):
 
         if kwargs:
             c_e = ControllerDatabase(kwargs)
+            res = c_e.do_query()
+        else:
+            raise HTTPError(400, "Query argument cannot be empty string")
+        return res
+
+
+class PostHandler_jar(BasePostRequestHandler, ABC):
+
+    def _post_request_arguments(self, *args, **kwargs):
+
+        """
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
+        logger.info(self.__class__.__name__)
+        data = {}
+        if isinstance(self.request.arguments, dict):
+            for k, v in self.request.arguments.items():
+                data[k] = v[0].decode('UTF-8')
+        if not data:
+            raise HTTPError(400, "Query argument cannot be empty string")
+        return data
+
+    def _request_service(self, **kwargs):
+
+        """
+        :param kwargs:
+        :return:
+        """
+
+        if kwargs:
+            c_e = ControllerDatabase_jar(kwargs)
             res = c_e.do_query()
         else:
             raise HTTPError(400, "Query argument cannot be empty string")

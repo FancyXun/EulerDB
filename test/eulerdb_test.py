@@ -294,21 +294,21 @@ if __name__ == "__main__":
     table = e2e.create_table(database_info, mysql_cx)
     e2e.test_encrypt_sql(database_info, mysql_cx, table)
     e2e.drop_table(database_info, mysql_cx, table)
-
+    #
     # test2
     table = e2e.create_table(database_info, mysql_cx)
     e2e.insert_sql(database_info, mysql_cx, table)
     e2e.test_select_sql(database_info, mysql_cx, table)
-    e2e.update_sql(database_info, mysql_cx, table)
-    e2e.delete_sql(database_info, mysql_cx, table)
-    e2e.test_select_sql(database_info, mysql_cx, table)
-    e2e.drop_table(database_info, mysql_cx, table)
-
-    # test3
-    table1 = e2e.create_table(database_info, mysql_cx)
-    table2 = e2e.create_table(database_info, mysql_cx)
-    e2e.insert_sql(database_info, mysql_cx, table1)
-    e2e.insert_sql(database_info, mysql_cx, table2)
-    e2e.test_two_tables(database_info, mysql_cx, table1, table2)
-    e2e.drop_table(database_info, mysql_cx, table1)
-    e2e.drop_table(database_info, mysql_cx, table2)
+    # e2e.update_sql(database_info, mysql_cx, table)
+    # e2e.delete_sql(database_info, mysql_cx, table)
+    # e2e.test_select_sql(database_info, mysql_cx, table)
+    # e2e.drop_table(database_info, mysql_cx, table)
+    #
+    # # test3
+    # table1 = e2e.create_table(database_info, mysql_cx)
+    # table2 = e2e.create_table(database_info, mysql_cx)
+    # e2e.insert_sql(database_info, mysql_cx, table1)
+    # e2e.insert_sql(database_info, mysql_cx, table2)
+    # e2e.test_two_tables(database_info, mysql_cx, table1, table2)
+    # e2e.drop_table(database_info, mysql_cx, table1)
+    # e2e.drop_table(database_info, mysql_cx, table2)

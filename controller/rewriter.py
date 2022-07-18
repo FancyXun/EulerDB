@@ -27,6 +27,22 @@ class ControllerDatabase(object):
         execution_context.invoke(self.query_info, query, encrypted_cols, columns_info=True)
 
 
+class ControllerDatabase_jar(object):
+
+    def __init__(self, data):
+        self.query_info = data
+
+    def do_query(self):
+        self.query_info['host'] = '127.0.0.1'
+        self.query_info['port'] = '3306'
+        result = execution_context.invoke(self.query_info, self.query_info['query'], None, columns_info=True)
+        if result[0]:
+            return {'result': result[0],
+                    'columns': result[1]}
+        else:
+            return {'result': []}
+
+
 class ControllerEncryptSql(object):
 
     def __init__(self, data):
