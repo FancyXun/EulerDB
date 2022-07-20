@@ -29,7 +29,7 @@ $ python service.py
 
 ### Test
 ```shell script
-$ python single_table_test.py
+$ python eulerdb_test.py
 ```
 
 ## Sql-editor

@@ -1,6 +1,7 @@
 from decimal import Decimal
 from scheduler.crypto import encrypt
 from scheduler.handers.base import Handler
+from scheduler.handers.clause.utils import get_nest_table
 
 
 class DecryptHandler(Handler):
@@ -31,6 +32,13 @@ class DecryptHandler(Handler):
         return self.result
 
     def __decrypt__(self, table, col_val, col_name, state):
+        if col_val is None:
+            return None
+        if "." in col_name:
+            table, col_name = col_name.split(".")
+        if isinstance(table, dict):
+            # 可能是select 嵌套
+            table = get_nest_table(table)
         key = self.db_meta[table]['columns'][col_name]['key']
         homo_key = self.db_meta[table]['columns'][col_name].get('homomorphic_key')
         decrypter = {"symmetric": encrypt.AESCipher(key),

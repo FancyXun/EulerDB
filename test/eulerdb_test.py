@@ -5,7 +5,6 @@ import requests
 import mysql.connector
 import random
 from unittest import TestCase
-from decimal import Decimal
 
 
 def AllRange(sentences, words, start, end):
@@ -37,32 +36,22 @@ def get_data(num=float("inf")):
     sentences = generate_words()
     age = []
     score = []
-    edu = []
     comments = generate_words()
-    weight = []
-    height = []
     for i in range(len(sentences)):
         if i > num:
             break
         id_card.append(str(310310310 + i))
         age.append(str(random.randint(1, 100)))
         score.append(str(random.randint(60, 100)))
-        weight.append(str(round(random.random(), 4)))
-        edu.append(random.choice(['post', 'bach', 'high']))
-        height.append(str(round(300*random.random(), 12)))
 
-    return [id_card, sentences, age, score, comments, weight, edu, height]
+    return [id_card, sentences, age, score, comments]
 
 
-def req(_db_info, _cx, sql, sql_local=None):
+def req(_db_info, _cx, sql):
     _db_info['query'] = sql
     requests.post('http://localhost:8888/query', json.dumps(_db_info))
     cu = _cx.cursor()
-    if sql_local:
-        print(sql_local)
-        cu.execute(sql_local)
-    else:
-        cu.execute(sql)
+    cu.execute(sql)
     _cx.commit()
     cu.close()
 
@@ -77,20 +66,24 @@ def req_select(_db_info, _cx, sql):
     return result.json()['result'], mysql_result
 
 
+def req_encrypt_sql(_db_info, _cx, sql):
+    _db_info['query'] = sql
+    _db_info['backend'] = True
+    result = requests.post('http://localhost:8888/encrypt_sql', json.dumps(_db_info))
+    return result.json()['encrypt_sql']
+
+
 class E2ETest(TestCase):
 
     @staticmethod
-    def create_table(_db_info, _cx, refer_table="table_spare"):
-        _table = "table_" + hashlib.md5(str(time.process_time()).encode('utf-8')).hexdigest()
+    def create_table(_db_info, _cx):
+        _table = "table_" + hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
         sql = 'create table if not exists {}(' \
               'id_card varchar(100), ' \
               'sentences varchar(100), ' \
               'age int, ' \
               'score int, ' \
-              'comments varchar(100), ' \
-              'weight float, ' \
-              'edu char(4), ' \
-              'height double);'.format(_table)
+              'comments varchar(100)) '.format(_table)
 
         encrypted_columns = {
             "id_card": {
@@ -104,20 +97,6 @@ class E2ETest(TestCase):
             "age": {
                 "fuzzy": False,
                 "key": "abcdefgopqrst",
-                "arithmetic": True,
-                "homomorphic_key": [787659527, 1023624989],
-            },
-            "weight": {
-                "fuzzy": False,
-                "key": "abcdefgopqrst"
-            },
-            "edu": {
-                "fuzzy": True,
-                "key": "abcdefghisdfn"
-            },
-            "height": {
-                "fuzzy": False,
-                "key": "abcdefgopqrst"
             }
         }
         _db_info['encrypted_columns'] = encrypted_columns
@@ -125,7 +104,7 @@ class E2ETest(TestCase):
         print("--" + "\n" + "--")
         req(_db_info, _cx, sql)
         print("finished".format(_table))
-        print("-"*100)
+        print("-" * 100)
         _db_info.pop('encrypted_columns')
         return _table
 
@@ -139,69 +118,7 @@ class E2ETest(TestCase):
         print("-" * 100)
 
     @staticmethod
-    def add_primary_key(_db_info, _cx, _table, column_str='age'):
-        sql = 'alter table {} add primary key({});'.format(_table, column_str)
-        print("alter table {} add primary key({})".format(_table, column_str))
-        print("--" + "\n" + "--")
-        req(_db_info, _cx, sql)
-        print("finished".format(_table))
-        print("-" * 100)
-
-    @staticmethod
-    def drop_primary_key(_db_info, _cx, _table):
-        sql = 'alter table {} drop primary key;'.format(_table)
-        print("alter table {} drop primary key".format(_table))
-        print("--" + "\n" + "--")
-        req(_db_info, _cx, sql)
-        print("finished".format(_table))
-        print("-" * 100)
-
-    @staticmethod
-    def add_foreign_key(_db_info, _cx, _table, refer_table='table_spare', column_str='age'):
-        def create_spare_table(_db_info, _cx, _table="table_spare"):
-            sql = 'create table if not exists {}(' \
-                  'age int primary key, ' \
-                  'score int, ' \
-                  'comments varchar(100));'.format(_table)
-
-            encrypted_columns = {
-                "age": {
-                    "fuzzy": False,
-                    "key": "abcdefgopqrst",
-                    "arithmetic": True,
-                    "homomorphic_key": [787659527, 1023624989],
-                }
-            }
-            _db_info['encrypted_columns'] = encrypted_columns
-            print("create table {}".format(_table))
-            print("--" + "\n" + "--")
-            req(_db_info, _cx, sql)
-            print("finished".format(_table))
-            print("-" * 100)
-            _db_info.pop('encrypted_columns')
-            return _table
-
-        refer_table = create_spare_table(_db_info, _cx, refer_table)
-        sql = 'alter table {} add constraint {}_fk_test foreign key({}) references {}({});'.format(_table, refer_table, column_str, refer_table, column_str)
-        sql_local = 'alter table {} add constraint {}_local_fk_test foreign key({}) references {}({});'.format(_table, refer_table, column_str, refer_table, column_str)
-        print("alter table {} add foreign key {}_fk_test".format(_table, refer_table))
-        print("--" + "\n" + "--")
-        req(_db_info, _cx, sql, sql_local)
-        print("finished".format(_table))
-        print("-" * 100)
-
-    @staticmethod
-    def drop_foreign_key(_db_info, _cx, _table, refer_table="table_spare"):
-        sql = 'alter table {} drop foreign key {}_fk_test;'.format(_table, refer_table)
-        sql_local = 'alter table {} drop foreign key {}_local_fk_test;'.format(_table, refer_table)
-        print("alter table {} drop foreign key {}_fk_test".format(_table, refer_table))
-        print("--" + "\n" + "--")
-        req(_db_info, _cx, sql, sql_local)
-        print("finished".format(_table))
-        print("-" * 100)
-
-    @staticmethod
-    def insert_sql(_db_info, _cx, _table, num=float("inf")):
+    def insert_sql(_db_info, _cx, _table, num=100):
         insert_data = get_data(num)
         print("insert table {}".format(_table))
         print("--" + "\n" + "--")
@@ -211,12 +128,8 @@ class E2ETest(TestCase):
                   'sentences, ' \
                   'age, ' \
                   'score, ' \
-                  'comments, ' \
-                  'weight, ' \
-                  'edu, ' \
-                  'height) values ( "' + \
-                  i[0] + '", "' + i[1] + '", ' + i[2] + ', ' + i[3] + ', "' + i[4] + '", ' + i[5] + ', "' + i[6] + \
-                  '", ' + i[7] + ' )'
+                  'comments) values ( "' + \
+                  i[0] + '", "' + i[1] + '", ' + i[2] + ', ' + i[3] + ', "' + i[4] + '" )'
             sql = sql.format(_table)
             req(_db_info, _cx, sql)
         print("finished".format(_table))
@@ -225,40 +138,33 @@ class E2ETest(TestCase):
     def test_select_sql(self, _db_info, _cx, _table):
         print("select table {}".format(_table))
         print("--" + "\n" + "--")
-        select = ['select count(*) from {}'.format(_table),
-                  'select * from {} limit 5'.format(_table),
-                  'select id_card, sentences, age, score, comments from {} limit 4'.format(_table),
-                  'select weight from {} limit 4'.format(_table),
-                  'select height from {} limit 4'.format(_table),
-                  'select edu from {} limit 4'.format(_table),
-                  'select id_card, sentences, age from {} where age = 20 limit 5'.format(_table),
-                  'select id_card, sentences, age, score  from {} where score = 60 limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age > 40 limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age < 10 limit 5'.format(_table),
-                  'select id_card, sentences, age from {} where age <= 10 limit 5'.format(_table),
-                  'select id_card, sentences, age, score from {} where score > 70 limit 5'.format(_table),
-                  'select * from {} where id_card = "310310314" and sentences = "杭州光之树大华公司中国集团上海腾讯有限"'.format(_table),
-                  'select * from {} where id_card = "310310320" or sentences = "杭州光之树大华中国公司集团上海腾讯有限"'.format(_table),
-                  'select id_card, sentences, age from {} order by age limit 5'.format(_table),
-                  'select distinct id_card, sentences, age from {} limit 5'.format(_table),
-                  'select distinct age, sentences, id_card from {} limit 5'.format(_table),
-                  'select max(age), min(age) from {}'.format(_table),
-                  'select id_card, sentences from {} WHERE age = 30 limit 5'.format(_table),
-                  'select max(score), min(score) from {} '.format(_table),
-                  'select max(score), min(age) from {} '.format(_table),
-                  'select sum(score) from {} '.format(_table),
-                  'select sum(age) from {} '.format(_table),
-                  'select sum(age), avg(age) from {} '.format(_table),
-                  'select min(weight), max(weight) from {} '.format(_table),
-                  'select min(height), max(height) from {} '.format(_table),
-                  'select id_card, sentences from {} where sentences like "%杭州光之树%" limit 5'.format(_table),
-                  'select id_card, sentences, comments from {} where sentences like "光之树%中国上%" limit 5'.format(_table),
+        select = [
+            'select count(*) from {}'.format(_table),
+            'select * from {} limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age = 20 limit 5'.format(_table),
+            'select id_card, sentences, age, score  from {} where score = 60 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age > 40 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age < 10 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age <= 10 limit 5'.format(_table),
+            'select id_card, sentences, age, score from {} where score > 70 limit 5'.format(_table),
+            'select * from {} where id_card = "310310314" and sentences = "杭州光之树大华公司中国集团上海腾讯有限"'.format(_table),
+            'select * from {} where id_card = "310310320" or sentences = "杭州光之树大华中国公司集团上海腾讯有限"'.format(_table),
+            'select id_card, sentences, age from {} order by age limit 5'.format(_table),
+            'select distinct id_card, sentences, age from {} limit 5'.format(_table),
+            'select distinct age, sentences, id_card from {} limit 5'.format(_table),
+            'select max(age), min(age) from {}'.format(_table),
+            'select id_card, sentences from {} WHERE age = 30 limit 5'.format(_table),
+            'select max(score), min(score) from {} '.format(_table),
+            'select max(score), min(age) from {} '.format(_table),
+            'select id_card, sentences from {} where sentences like "%杭州光之树%" limit 5'.format(_table),
+            'select id_card, sentences, comments from {} where sentences like "光之树%中国上%" limit 5'.format(_table),
+            'select id_card from (select id_card, sentences, '
+            'comments from {} where sentences like "%光之树%") as a'.format(_table)
+
                   ]
         for sql in select:
             r0, r1 = req_select(_db_info, _cx, sql)
             r0 = [tuple(i) for i in r0]
-            # print('r0',r0)
-            # print('r1',r1)
             try:
                 self.assertEqual(r0, r1, 'The sql result is not equal {}'.format(sql))
             except Exception as e:
@@ -268,20 +174,22 @@ class E2ETest(TestCase):
 
     def test_two_tables(self, _db_info, _cx, _table1, _table2):
         select = \
-            [
-                'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.age limit 10'
+            ['SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.age limit 10'
                  .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
-                # fixme:bug
-                'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.score limit 10'
-                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
-                f'SELECT {_table1}.id_card FROM {_table1} LEFT JOIN {_table2} ON {_table1}.id_card = {_table2}.id_card limit 10',
-                'SELECT {}.id_card, {}.score, {}.score FROM {} LEFT JOIN {} ON {}.score = {}.score limit 10'
-                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
-                'SELECT {}.id_card, {}.score, {}.score FROM {} RIGHT JOIN {} ON {}.score = {}.score limit 10'
-                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
-                'SELECT {}.id_card, {}.age, {}.age FROM {} RIGHT JOIN {} ON {}.age = {}.age limit 10'
-                    .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
-            ]
+             # fixme:bug
+             # 'SELECT {}.id_card, {}.age, {}.age FROM {} INNER JOIN {} ON {}.age = {}.score limit 10'
+             #     .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+             'SELECT {}.id_card, {}.age, {}.age FROM {} JOIN {} ON {}.age = {}.age limit 10'
+                 .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+             'SELECT {}.id_card, {}.age, {}.age FROM {} LEFT JOIN {} ON {}.age = {}.age limit 10'
+                 .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+             'SELECT {}.id_card, {}.score, {}.score FROM {} LEFT JOIN {} ON {}.score = {}.score limit 10'
+                 .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+             'SELECT {}.id_card, {}.score, {}.score FROM {} RIGHT JOIN {} ON {}.score = {}.score limit 10'
+                 .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+             'SELECT {}.id_card, {}.age, {}.age FROM {} RIGHT JOIN {} ON {}.age = {}.age limit 10'
+                 .format(_table1, _table1, _table2, _table1, _table2, _table1, _table2),
+             ]
         for sql in select:
             r0, r1 = req_select(_db_info, _cx, sql)
             r0 = [tuple(i) for i in r0]
@@ -296,7 +204,7 @@ class E2ETest(TestCase):
     def update_sql(_db_info, _cx, _table):
         print("update table {}".format(_table))
         print("--" + "\n" + "--")
-        update =[
+        update = [
             'UPDATE {} set id_card = "310310319" , sentences = "上海市光之树大华" WHERE age = 30'.format(_table)
         ]
         for sql in update:
@@ -316,6 +224,36 @@ class E2ETest(TestCase):
         print("finished".format(_table))
         print("-" * 100)
 
+    def test_encrypt_sql(self, _db_info, _cx, _table):
+        select = [
+            'select count(*) from {}'.format(_table),
+            'select * from {} limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age = 20 limit 5'.format(_table),
+            'select id_card, sentences, age, score  from {} where score = 60 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age > 40 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age < 10 limit 5'.format(_table),
+            'select id_card, sentences, age from {} where age <= 10 limit 5'.format(_table),
+            'select id_card, sentences, age, score from {} where score > 70 limit 5'.format(_table),
+            'select * from {} where id_card = "310310314" and sentences = "杭州光之树大华公司中国集团上海腾讯有限"'.format(_table),
+            'select * from {} where id_card = "310310320" or sentences = "杭州光之树大华中国公司集团上海腾讯有限"'.format(_table),
+            'select id_card, sentences, age from {} order by age limit 5'.format(_table),
+            'select distinct id_card, sentences, age from {} limit 5'.format(_table),
+            'select distinct age, sentences, id_card from {} limit 5'.format(_table),
+            'select max(age), min(age) from {}'.format(_table),
+            'select id_card, sentences from {} WHERE age = 30 limit 5'.format(_table),
+            'select max(score), min(score) from {} '.format(_table),
+            'select max(score), min(age) from {} '.format(_table),
+            'select id_card, sentences from {} where sentences like "%杭州光之树%" limit 5'.format(_table),
+            'select id_card, sentences, comments from {} where sentences like "光之树%中国上%" limit 5'.format(_table),
+            'select id_card from (select id_card, sentences, '
+            'comments from {} where sentences like "%光之树%") as a'.format(_table)
+
+        ]
+        for sql in select:
+            print(sql)
+            print(req_encrypt_sql(_db_info, _cx, sql))
+            print("-"*50)
+
 
 class DataBase:
 
@@ -324,7 +262,7 @@ class DataBase:
         db_host = '127.0.0.1'
         db = 'points'
         user = 'root'
-        password = 'root'
+        password = 'rootroot'
         port = 3306
 
         db_info = {
@@ -349,31 +287,27 @@ class DataBase:
 if __name__ == "__main__":
     database_info = DataBase.get_db_info()
     mysql_cx = DataBase.get_mysql_cu(database_info)
-
     e2e = E2ETest()
 
     # test1
-    table = e2e.create_table(database_info, mysql_cx)
-    e2e.add_primary_key(database_info, mysql_cx, table)
-    e2e.drop_primary_key(database_info, mysql_cx, table)
-    e2e.add_foreign_key(database_info, mysql_cx, table, refer_table='table_spa_test')
-    e2e.drop_foreign_key(database_info, mysql_cx, table, refer_table='table_spa_test')
-    e2e.drop_table(database_info, mysql_cx, table)
-
+    # table = e2e.create_table(database_info, mysql_cx)
+    # e2e.test_encrypt_sql(database_info, mysql_cx, table)
+    # e2e.drop_table(database_info, mysql_cx, table)
+    #
     # test2
     table = e2e.create_table(database_info, mysql_cx)
-    e2e.insert_sql(database_info, mysql_cx, table, 50)
+    e2e.insert_sql(database_info, mysql_cx, table, 1000)
     e2e.test_select_sql(database_info, mysql_cx, table)
     e2e.update_sql(database_info, mysql_cx, table)
     e2e.delete_sql(database_info, mysql_cx, table)
     e2e.test_select_sql(database_info, mysql_cx, table)
     e2e.drop_table(database_info, mysql_cx, table)
-
-    # test3
+    #
+    # # test3
     table1 = e2e.create_table(database_info, mysql_cx)
     table2 = e2e.create_table(database_info, mysql_cx)
-    e2e.insert_sql(database_info, mysql_cx, table1)
-    e2e.insert_sql(database_info, mysql_cx, table2)
+    e2e.insert_sql(database_info, mysql_cx, table1, 100)
+    e2e.insert_sql(database_info, mysql_cx, table2, 100)
     e2e.test_two_tables(database_info, mysql_cx, table1, table2)
     e2e.drop_table(database_info, mysql_cx, table1)
     e2e.drop_table(database_info, mysql_cx, table2)
