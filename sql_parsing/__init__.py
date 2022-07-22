@@ -90,21 +90,56 @@ def format(json, **kwargs):
 
 
 def parse_alter_key(sql):
-    add_primary_key = re.match(r'alter table (.*?) add primary key\((.*?)\);', sql, re.M|re.I)
+    add_primary_key_pattern = re.compile(r'[ \t\n\r]*'
+                                         r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                         r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                         r'(\w*)[ \t\n\r]*'
+                                         r'[aA][dD][dD][ \t\n\r]*'
+                                         r'[pP][rR][iI][mM][aA][rR][yY][ \t\n\r]*'
+                                         r'[kK][eE][yY][ \t\n\r]*'
+                                         r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
+    add_primary_key = add_primary_key_pattern.match(sql)
     if add_primary_key:
         return {'alter': add_primary_key.group(1),
                 'add primary key': [{'value': i} for i in add_primary_key.group(2).split(',')]}
-    drop_primary_key = re.match(r'alter table (.*?) drop primary key;', sql, re.M | re.I)
+    drop_primary_key_pattern = re.compile(r'[ \t\n\r]*'
+                                          r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                          r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                          r'(\w*)[ \t\n\r]*'
+                                          r'[dD][rR][oO][pP][ \t\n\r]*'
+                                          r'[pP][rR][iI][mM][aA][rR][yY][ \t\n\r]*'
+                                          r'[kK][eE][yY][ \t\n\r]*;?$')
+    drop_primary_key = drop_primary_key_pattern.match(sql)
     if drop_primary_key:
         return {'alter': drop_primary_key.group(1), 'drop primary key': True}
-    add_foreign_key = re.match(r'alter table (.*?) add constraint (.*?) foreign key\((.*?)\) REFERENCES '
-                               r'(.*?)\((.*?)\);', sql, re.M | re.I)
+    add_foreign_key_pattern = re.compile(r'[ \t\n\r]*'
+                                         r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                         r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                         r'(\w*)[ \t\n\r]*'
+                                         r'[aA][dD][dD][ \t\n\r]*'
+                                         r'[cC][oO][nN][sS][tT][rR][aA][iI][nN][tT][ \t\n\r]*'
+                                         r'(\w*)[ \t\n\r]*'
+                                         r'[fF][oO][rR][eE][iI][gG][nN][ \t\n\r]*'
+                                         r'[kK][eE][yY][ \t\n\r]*'
+                                         r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*'
+                                         r'[rR][eE][fF][eE][rR][eE][nN][cC][eE][sS][ \t\n\r]*'
+                                         r'(\w*)[ \t\n\r]*'
+                                         r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
+    add_foreign_key = add_foreign_key_pattern.match(sql)
     if add_foreign_key:
         return {'alter': add_foreign_key.group(1), 'add constraint': add_foreign_key.group(2),
                 'add foreign key': [{'value': i} for i in add_foreign_key.group(3).split(',')],
                 'reference_table': add_foreign_key.group(4),
                 'reference_feature': [{'value': i} for i in add_foreign_key.group(5).split(',')]}
-    drop_foreign_key = re.match(r'alter table (.*?) drop foreign key (.*?);', sql, re.M | re.I)
+    drop_foreign_key_pattern = re.compile(r'[ \t\n\r]*'
+                                          r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                          r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                          r'(\w*)[ \t\n\r]*'
+                                          r'[dD][rR][oO][pP][ \t\n\r]*'
+                                          r'[fF][oO][rR][eE][iI][gG][nN][ \t\n\r]*'
+                                          r'[kK][eE][yY][ \t\n\r]*'
+                                          r'(\w*)[ \t\n\r]*;?$')
+    drop_foreign_key = drop_foreign_key_pattern.match(sql)
     if drop_foreign_key:
         return {'alter': drop_foreign_key.group(1), 'drop foreign key': drop_foreign_key.group(2)}
     return {}

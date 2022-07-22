@@ -570,7 +570,7 @@ class Formatter:
         return f"ORDER BY {param}"
 
     def limit(self, json, prec):
-        num = self.dispatch(json["limit"], precedence["order"])
+        num = ", ".join(self.dispatch(s) for s in listwrap(json["limit"]))
         return f"LIMIT {num}"
 
     def offset(self, json, prec):

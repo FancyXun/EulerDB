@@ -615,3 +615,5 @@ mysql_doublequote_string = Regex(r'\"(\"\"|[^"])*\"') / to_string
 ansi_ident = Regex(r'\"(\"\"|[^"])*\"') / unquote
 mysql_backtick_ident = Regex(r"\`(\`\`|[^`])*\`") / unquote
 sqlserver_ident = Regex(r"\[(\]\]|[^\]])*\]") / unquote
+
+comma_sep = Suppress(',')

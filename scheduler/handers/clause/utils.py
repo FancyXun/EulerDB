@@ -1,6 +1,6 @@
 
 def get_table(k_word, _from):
-    if k_word == 'from' and isinstance(_from, str):
+    if k_word in ['from', 'join', 'left join', 'right join', 'inner join', 'value'] and isinstance(_from, str):
         return _from
     if isinstance(_from, dict):
         for _k, _v in _from.items():
@@ -18,3 +18,25 @@ def get_nest_table(table):
             table = table_name
             break
     return table
+
+
+def get_origin_table(table_name, table):
+    res = ''
+    if isinstance(table, dict):
+        for key in ['join', 'inner join', 'left join', 'right join']:
+            if key in table:
+                table = table[key]
+        if isinstance(table, str):
+            res = get_origin_table(table_name, table)
+        if isinstance(table, dict):
+            if table.get('name') == table_name:
+                res = get_nest_table(table)
+    if isinstance(table, list):
+        for i in table:
+            res_i = get_origin_table(table_name, i)
+            res = res_i if res_i else res
+    if isinstance(table, str):
+        if table_name == table:
+            res = table
+    return res
+

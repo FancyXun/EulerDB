@@ -1,7 +1,7 @@
 from decimal import Decimal
 from scheduler.crypto import encrypt
 from scheduler.handers.base import Handler
-from scheduler.handers.clause.utils import get_nest_table
+from scheduler.handers.clause.utils import get_nest_table, get_origin_table
 
 
 class DecryptHandler(Handler):
@@ -35,7 +35,8 @@ class DecryptHandler(Handler):
         if col_val is None:
             return None
         if "." in col_name:
-            table, col_name = col_name.split(".")
+            table_name, col_name = col_name.split(".")
+            table = get_origin_table(table_name, table)
         if isinstance(table, dict):
             # 可能是select 嵌套
             table = get_nest_table(table)
