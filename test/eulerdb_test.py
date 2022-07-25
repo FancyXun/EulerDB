@@ -262,7 +262,7 @@ class DataBase:
         db_host = '127.0.0.1'
         db = 'points'
         user = 'root'
-        password = 'rootroot'
+        password = 'root'
         port = 3306
 
         db_info = {
@@ -290,10 +290,10 @@ if __name__ == "__main__":
     e2e = E2ETest()
 
     # test1
-    # table = e2e.create_table(database_info, mysql_cx)
-    # e2e.test_encrypt_sql(database_info, mysql_cx, table)
-    # e2e.drop_table(database_info, mysql_cx, table)
-    #
+    table = e2e.create_table(database_info, mysql_cx)
+    e2e.test_encrypt_sql(database_info, mysql_cx, table)
+    e2e.drop_table(database_info, mysql_cx, table)
+
     # test2
     table = e2e.create_table(database_info, mysql_cx)
     e2e.insert_sql(database_info, mysql_cx, table, 1000)
