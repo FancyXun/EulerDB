@@ -276,6 +276,36 @@ def parser(literal_string, ident, sqlserver=False):
             | Combine(var_name + Optional(".*"))
         )
 
+        compound_limit = (
+            NULL
+            | TRUE
+            | FALSE
+            | NOCASE
+            | interval
+            | timestamp
+            | extract
+            | case
+            | switch
+            | cast
+            | distinct
+            | trim
+            | stack
+            | create_array
+            | create_map
+            | create_struct
+            | (LB + Group(query) + RB)
+            | (LB + Group(delimited_list(expr)) / to_tuple_call + RB)
+            | literal_string.set_parser_name("string")
+            | hex_num.set_parser_name("hex")
+            | scale_function
+            | scale_ident
+            | int_num + comma_sep + int_num
+            | real_num.set_parser_name("float")
+            | int_num.set_parser_name("int")
+            | call_function
+            | Combine(var_name + Optional(".*"))
+        )
+
         sort_column = (
             expr("value").set_parser_name("sort1")
             + Optional(DESC("sort") | ASC("sort"))
@@ -425,7 +455,7 @@ def parser(literal_string, ident, sqlserver=False):
                 + rows
                 + Optional(keyword("only"))
             )
-            & Optional(assign("limit", expr))
+            & Optional(assign("limit", compound_limit))
         )
 
         ordered_sql = (

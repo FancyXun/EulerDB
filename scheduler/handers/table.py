@@ -42,7 +42,7 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
         for k, v in val.items():
             primary_key_plus = primary_key if k == 'symmetric' else ''
             enc_col_name = random.choice(string.ascii_letters) + \
-                           hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+                           hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
             for t_k, t_v in col_type.items():
                 columns_kv[col_name]['type'] = t_k
                 if t_v:
@@ -54,18 +54,18 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
                 columns_kv[col_name]['enc-cols'].update({k: enc_col_name})
         if encrypted_cols[col['name']]['fuzzy']:
             enc_col_name = random.choice(string.ascii_letters) + \
-                           hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+                           hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
             enc_columns.append(enc_col_name + ' ' + fuzzy_type_fixed)
             columns_kv[col_name]['enc-cols'].update({"fuzzy": enc_col_name})
         if encrypted_cols[col['name']].get('arithmetic'):
             enc_col_name = random.choice(string.ascii_letters) + \
-                           hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+                           hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
             enc_columns.append(enc_col_name + ' ' + arithmetic_type_fixed)
             columns_kv[col_name]['enc-cols'].update({"arithmetic": enc_col_name})
             columns_kv[col_name]['homomorphic_key'] = encrypted_cols[col['name']].get('homomorphic_key', "")
         columns_kv[col_name]['key'] = encrypted_cols[col['name']]['key']
         columns_kv[col_name]['plaintext'] = False
-    anonymous_table = "table_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+    anonymous_table = "table_" + hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
     enc_constraint = []
     constraints = create_table.get('constraint', [])
     constraints = [constraints] if isinstance(constraints, dict) else constraints

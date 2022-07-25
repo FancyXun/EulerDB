@@ -88,10 +88,10 @@ class RemoteExecutor(AbstractQueryExecutor):
             logger.info("Encrypt SQL:{}".format(enc_query))
             logger.info("Encrypt:{}".format(time.time() - start_time))
             if query_type == QueryType.SELECT:
-                if 'limit' in self.conn_info.keys():
-                    limit = self.conn_info['limit']
-                    if self.rewriter.limit < 0:
-                        enc_query = enc_query + " limit {}".format(limit)
+                # if 'limit' in self.conn_info.keys():
+                #     limit = self.conn_info['limit']
+                #     if self.rewriter.limit < 0:
+                #         enc_query = enc_query + " limit {}".format(limit)
                 if not isinstance(self.table, dict):
                     # todo: 长达支持table为dict
                     enc_query = self.inject_procedure(enc_query, use_cursor)
@@ -193,12 +193,16 @@ class RemoteExecutor(AbstractQueryExecutor):
             Delta.get_paillier_procedure_info(enc_query, self.str_db, self.table)
         if not need_paillier_procedure:
             return enc_query
+        for feature in set(sum_feature_name_list+avg_feature_name_list):
+            Delta.set_sum_feature(self.conn.cursor(), feature, table_name)
+        if avg_feature_name_list:
+            Delta.set_total_feature_num(self.conn.cursor(), table_name)
         for feature in sum_feature_name_list:
-            Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
+            # Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
             enc_query = Delta.modify_sum_query(enc_query, feature[0], use_cursor)
         for feature in avg_feature_name_list:
-            Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
-            enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor)
+            # Delta.create_paillier_sum_procedure(self.conn.cursor(), feature, table_name, use_cursor)
+            enc_query = Delta.modify_avg_query(enc_query, feature[0], use_cursor, 'TotalFeature')
         enc_query = enc_query + ' limit 1'
         return enc_query
 
@@ -208,3 +212,29 @@ class RemoteExecutor(AbstractQueryExecutor):
     @property
     def str_db(self):
         return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])
+
+
+if __name__ == '__main__':
+    import pprint
+    sql = [
+           # 'select * from table_fe88068167757a7800ad3435283e7102;',
+           # 'select * from table_fe88068167757a7800ad3435283e7102 join table_fe88068167757a7800ad3435283e7102;',
+           #  'select max(age) from {}'.format('table_10cca3e8d3ba7459c1c08fe7ec212f21'),
+           # 'select * from (select * from table_fe88068167757a7800ad3435283e7102) a;',
+           #  'select age from table_fe88068167757a7800ad3435283e7102',
+            'select a.age from (select * from table_fe88068167757a7800ad3435283e7102)  as a'
+           # 'select * from (select * from table_fe88068167757a7800ad3435283e7102) a, (select * from table_fe88068167757a7800ad3435283e7102) b;'
+
+           ]
+    query_info = {'host': '127.0.0.1', 'db': 'points', 'user': 'root', 'password': 'rootroot', 'port': 3306}
+    for i in sql:
+        print(i)
+        query_info['query'] = i
+        executor = RemoteExecutor(conn_info=query_info)
+        res = executor.dispatch(i)
+        print(executor.rewriter.select.select_columns)
+        print(executor.rewriter.select.select_types)
+        print(executor.rewriter.select.select_state)
+        print(res[0])
+        # print(res[1])
+

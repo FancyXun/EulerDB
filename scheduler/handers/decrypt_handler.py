@@ -1,7 +1,7 @@
 from decimal import Decimal
 from scheduler.crypto import encrypt
 from scheduler.handers.base import Handler
-from scheduler.handers.clause.utils import get_nest_table
+from scheduler.handers.clause.utils import get_nest_table, get_origin_table
 
 
 class DecryptHandler(Handler):
@@ -24,7 +24,7 @@ class DecryptHandler(Handler):
             for col_name, state, col_val in zip(select_columns, result_state, row):
                 if state == "plaintext":
                     if isinstance(col_val, Decimal):
-                        col_val = float(col_val)
+                        col_val = eval(col_val.__str__())
                     new_row.append(col_val)
                 else:
                     new_row.append(self.__decrypt__(table, col_val, col_name, state))
@@ -35,7 +35,8 @@ class DecryptHandler(Handler):
         if col_val is None:
             return None
         if "." in col_name:
-            table, col_name = col_name.split(".")
+            table_name, col_name = col_name.split(".")
+            table = get_origin_table(table_name, table)
         if isinstance(table, dict):
             # 可能是select 嵌套
             table = get_nest_table(table)

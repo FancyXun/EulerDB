@@ -1,6 +1,6 @@
 result = {}
 csv = {}
-with open("../euler_db2.log", 'r')  as f:
+with open("../euler_db2.log", 'r') as f:
     a = f.readlines()
     for i in range(0, len(a), 6):
         if i == 0:

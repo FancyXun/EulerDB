@@ -113,7 +113,7 @@ class E2E():
 
     @staticmethod
     def test_create_table(_db_info, _cx):
-        _table = "table_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+        _table = "table_" + hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
         sql = 'create table if not exists {}(' \
               'id_card varchar(100), ' \
               'sentences varchar(300), ' \

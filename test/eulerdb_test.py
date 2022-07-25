@@ -1,4 +1,3 @@
-
 import hashlib
 import time
 import json
@@ -78,7 +77,7 @@ class E2ETest(TestCase):
 
     @staticmethod
     def create_table(_db_info, _cx):
-        _table = "table_" + hashlib.md5(str(time.clock()).encode('utf-8')).hexdigest()
+        _table = "table_" + hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
         sql = 'create table if not exists {}(' \
               'id_card varchar(100), ' \
               'sentences varchar(100), ' \
@@ -119,8 +118,8 @@ class E2ETest(TestCase):
         print("-" * 100)
 
     @staticmethod
-    def insert_sql(_db_info, _cx, _table):
-        insert_data = get_data()
+    def insert_sql(_db_info, _cx, _table, num=100):
+        insert_data = get_data(num)
         print("insert table {}".format(_table))
         print("--" + "\n" + "--")
         for i in zip(*insert_data):
@@ -294,21 +293,21 @@ if __name__ == "__main__":
     table = e2e.create_table(database_info, mysql_cx)
     e2e.test_encrypt_sql(database_info, mysql_cx, table)
     e2e.drop_table(database_info, mysql_cx, table)
-    #
+
     # test2
     table = e2e.create_table(database_info, mysql_cx)
-    e2e.insert_sql(database_info, mysql_cx, table)
+    e2e.insert_sql(database_info, mysql_cx, table, 1000)
     e2e.test_select_sql(database_info, mysql_cx, table)
-    # e2e.update_sql(database_info, mysql_cx, table)
-    # e2e.delete_sql(database_info, mysql_cx, table)
-    # e2e.test_select_sql(database_info, mysql_cx, table)
-    # e2e.drop_table(database_info, mysql_cx, table)
+    e2e.update_sql(database_info, mysql_cx, table)
+    e2e.delete_sql(database_info, mysql_cx, table)
+    e2e.test_select_sql(database_info, mysql_cx, table)
+    e2e.drop_table(database_info, mysql_cx, table)
     #
     # # test3
-    # table1 = e2e.create_table(database_info, mysql_cx)
-    # table2 = e2e.create_table(database_info, mysql_cx)
-    # e2e.insert_sql(database_info, mysql_cx, table1)
-    # e2e.insert_sql(database_info, mysql_cx, table2)
-    # e2e.test_two_tables(database_info, mysql_cx, table1, table2)
-    # e2e.drop_table(database_info, mysql_cx, table1)
-    # e2e.drop_table(database_info, mysql_cx, table2)
+    table1 = e2e.create_table(database_info, mysql_cx)
+    table2 = e2e.create_table(database_info, mysql_cx)
+    e2e.insert_sql(database_info, mysql_cx, table1, 100)
+    e2e.insert_sql(database_info, mysql_cx, table2, 100)
+    e2e.test_two_tables(database_info, mysql_cx, table1, table2)
+    e2e.drop_table(database_info, mysql_cx, table1)
+    e2e.drop_table(database_info, mysql_cx, table2)
