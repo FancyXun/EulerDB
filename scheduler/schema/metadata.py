@@ -80,6 +80,7 @@ element_type = {
 
 fuzzy_type_fixed = 'VARCHAR(2000)'
 arithmetic_type_fixed = 'Decimal(65,0)'
+sm4_type_fixed = 'VARCHAR(2000)'
 
 
 FUNC_CIPHERS = {

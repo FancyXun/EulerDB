@@ -4,8 +4,9 @@ import string
 import random
 
 from sql_parsing import parse_mysql as parse
+from scheduler.crypto import encrypt
 from scheduler.schema.metadata import Delta
-from scheduler.schema.metadata import element_type, fuzzy_type_fixed, arithmetic_type_fixed
+from scheduler.schema.metadata import element_type, fuzzy_type_fixed, arithmetic_type_fixed, sm4_type_fixed
 
 
 def rewrite_table(db, db_meta, query, encrypted_cols):
@@ -14,26 +15,40 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
         raise Exception("Bad create table query: {}".format(query))
     create_table = json['create table']
     table_name = create_table['name']
-    if table_name in db_meta.keys():
-        raise Exception("Table {} already exists".format(table_name))
+    # if table_name in db_meta.keys():
+    #     raise Exception("Table {} already exists".format(table_name))
     columns = create_table['columns']
     enc_columns = []
     columns_kv = {}
     columns = columns if isinstance(columns, list) else [columns]
     for col in columns:
-        auto_increment = '' if not col.get('auto_increment') else ' auto_increment'
+        auto_increment = '' if not col.get('auto_increment') else ' auto_increment '
         primary_key = '' if not col.get('primary_key') else ' primary key' + auto_increment
         col_name = col['name']
         col_type = col['type']
         columns_kv[col_name] = {}
         columns_kv[col_name]['enc-cols'] = {}
+        if 'nullable' in col:
+            is_nullable = ' NOT NULL ' if not col.get('nullable') else ' NULL '
+        else:
+            is_nullable = ''
+        if col.get('comment'):
+            columns_kv[col_name]['comment'] = col.get('comment', {}).get('literal')
         if col['name'] not in encrypted_cols:
             for t_k, t_v in col_type.items():
                 if t_v:
                     enc_col_type = t_k + '(' + str(t_v) + ')'
                 else:
                     enc_col_type = t_k
-                enc_columns.append(col_name + ' ' + enc_col_type + primary_key)
+                if col.get('default'):
+                    default_value = col['default']
+                    if isinstance(default_value, dict):
+                        if 'null' in default_value:
+                            default_value = 'NULL '
+                    default_value = ' DEFAULT ' + default_value
+                else:
+                    default_value = ''
+                enc_columns.append(col_name + ' ' + enc_col_type + is_nullable + primary_key + default_value)
                 columns_kv[col_name]['plaintext'] = True
                 columns_kv[col_name]['type'] = t_k
                 columns_kv[col_name]['key'] = ""
@@ -50,19 +65,62 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
                     enc_col_type = t_k + '(' + str(t_l) + ')'
                 else:
                     enc_col_type = v
-                enc_columns.append(enc_col_name + ' ' + enc_col_type + primary_key_plus)
+                if col.get('default'):
+                    default_value = col['default']
+                    if isinstance(default_value, dict):
+                        if 'null' in default_value:
+                            default_value = 'NULL '
+                    key = encrypted_cols[col['name']]['key']
+                    default_value = ' DEFAULT ' + encrypt.AESCipher(key).encrypt(default_value)
+                else:
+                    default_value = ''
+                enc_columns.append(enc_col_name + ' ' + enc_col_type + is_nullable + primary_key_plus + default_value)
                 columns_kv[col_name]['enc-cols'].update({k: enc_col_name})
         if encrypted_cols[col['name']]['fuzzy']:
             enc_col_name = random.choice(string.ascii_letters) + \
                            hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
-            enc_columns.append(enc_col_name + ' ' + fuzzy_type_fixed)
+            if col.get('default'):
+                default_value = col['default']
+                if isinstance(default_value, dict):
+                    if 'null' in default_value:
+                        default_value = 'NULL '
+                key = encrypted_cols[col['name']].get('sm4', "")
+                default_value = ' DEFAULT ' + encrypt.SM4CipherBytes(key).encrypt(default_value)
+            else:
+                default_value = ''
+            enc_columns.append(enc_col_name + ' ' + fuzzy_type_fixed + is_nullable + default_value)
             columns_kv[col_name]['enc-cols'].update({"fuzzy": enc_col_name})
         if encrypted_cols[col['name']].get('arithmetic'):
             enc_col_name = random.choice(string.ascii_letters) + \
                            hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
-            enc_columns.append(enc_col_name + ' ' + arithmetic_type_fixed)
+            if col.get('default'):
+                default_value = col['default']
+                if isinstance(default_value, dict):
+                    if 'null' in default_value:
+                        default_value = 'NULL '
+                key = encrypted_cols[col['name']].get('homomorphic_key', "")
+                default_value = ' DEFAULT ' + encrypt.HomomorphicCipher(key).encrypt(default_value)
+            else:
+                default_value = ''
+            enc_columns.append(enc_col_name + ' ' + arithmetic_type_fixed + is_nullable + default_value)
             columns_kv[col_name]['enc-cols'].update({"arithmetic": enc_col_name})
             columns_kv[col_name]['homomorphic_key'] = encrypted_cols[col['name']].get('homomorphic_key', "")
+        if encrypted_cols[col['name']].get('sm4'):
+            enc_col_name = random.choice(string.ascii_letters) + \
+                           hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
+            if col.get('default'):
+                default_value = col['default']
+                if isinstance(default_value, dict):
+                    if 'null' in default_value:
+                        default_value = 'NULL '
+                key = encrypted_cols[col['name']].get('sm4_key', "")
+                default_value = ' DEFAULT ' + encrypt.SM4CipherBytes(key).encrypt(default_value)
+            else:
+                default_value = ''
+            enc_columns.append(enc_col_name + ' ' + sm4_type_fixed + is_nullable + default_value)
+            columns_kv[col_name]['enc-cols'].update({"sm4": enc_col_name})
+            columns_kv[col_name]['sm4_key'] = encrypted_cols[col['name']].get('sm4_key', "")
+
         columns_kv[col_name]['key'] = encrypted_cols[col['name']]['key']
         columns_kv[col_name]['plaintext'] = False
     anonymous_table = "table_" + hashlib.md5(str(time.perf_counter()).encode('utf-8')).hexdigest()
@@ -73,11 +131,17 @@ def rewrite_table(db, db_meta, query, encrypted_cols):
         # print('constraint', constraint)
         enc_constraint.append(get_constraint_key(constraint, columns_kv, db))
     enc_constraint = "," + ",".join(enc_constraint) if enc_constraint else ""
-    query = 'CREATE TABLE IF NOT EXISTS ' + anonymous_table + '(' + ",".join(enc_columns) + enc_constraint + ');'
+    engine = 'ENGINE = ' + json.get('engine') if json.get('engine') else ''
+    table_auto_increment = 'AUTO_INCREMENT = ' + json.get('auto_increment') if json.get('auto_increment') else ''
+    table_collate = 'COLLATE = ' + json.get('collate') if json.get('collate') else ''
+    query = 'CREATE TABLE IF NOT EXISTS ' + anonymous_table + '(' + ",".join(enc_columns) + enc_constraint + ')' \
+            + engine + table_auto_increment + table_collate + ';'
+
     table_meta = {
         table_name: {
             'anonymous': anonymous_table,
-            'columns': columns_kv
+            'columns': columns_kv,
+            'comment': json.get('comment', {}).get('literal')
         }
     }
     Delta().update_delta(db, table_meta)
