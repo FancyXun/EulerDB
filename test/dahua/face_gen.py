@@ -11,6 +11,3 @@ print(a)
 print(b)
 print(c)
 print(len(d))
-
-# e = np.random.random((100, 128))
-# print(e[0].shape)
