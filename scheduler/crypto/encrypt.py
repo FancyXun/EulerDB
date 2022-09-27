@@ -192,26 +192,27 @@ class AESCipher:
 class SM4CipherBytes:
 
     def __init__(self, key):
-        self.key = bytes.fromhex(key.decode())
+        self.key = bytes.fromhex(sha256(key.encode('utf8')).hexdigest())
         self.crypt_sm4 = CryptSM4()
 
     def encrypt(self, raw):
         if isinstance(raw, bytes):
             pass
         else:
+            raw = str(raw)
             raw = raw.encode('utf-8')
         self.crypt_sm4.set_key(self.key, SM4_ENCRYPT)
         cipher_text = self.crypt_sm4.crypt_ecb(raw)
-        return cipher_text
+        return cipher_text.hex()
 
     def decrypt(self, enc):
         if isinstance(enc, bytes):
             pass
         else:
-            enc = enc.encode('utf-8')
+            enc = bytes.fromhex(enc)
         self.crypt_sm4.set_key(self.key, SM4_DECRYPT)
         text = self.crypt_sm4.crypt_ecb(enc)
-        return text
+        return text.decode()
 
 
 class AESCipherBytes:
@@ -338,12 +339,16 @@ class HomomorphicCipher:
 if __name__ == '__main__':
     text = 12345678
     key = "abcdefghijklmnopqrstuvwxyz@#$%^&*()points"
-    homo_key = "806267974661120203,787659527,1023624989"
+    homo_key = [787659527, 1023624989]
+    sm4 = SM4CipherBytes(key)
     ope = OPECipher(key)
     aes = AESCipher(key)
     fuzzy = FuzzyCipher(key)
     homo = HomomorphicCipher(homo_key)
     print(homo.decrypt(homo.encrypt(text)))
+    print('sm4', sm4.encrypt(text))
+
+    print('sm4', sm4.decrypt(sm4.encrypt(text)))
 
     ope_text = ope.encrypt(text)
     aes_text = aes.encrypt(str(text))
