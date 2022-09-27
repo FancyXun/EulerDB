@@ -93,29 +93,29 @@ def parse_alter_key(sql):
     add_primary_key_pattern = re.compile(r'[ \t\n\r]*'
                                          r'[aA][lL][tT][eE][rR][ \t\n\r]*'
                                          r'[tT][aA][bB][lL][eE][ \t\n\r]*'
-                                         r'(\w*)[ \t\n\r]*'
+                                         r'(`|\b)(\w*)\1[ \t\n\r]*'
                                          r'[aA][dD][dD][ \t\n\r]*'
                                          r'[pP][rR][iI][mM][aA][rR][yY][ \t\n\r]*'
                                          r'[kK][eE][yY][ \t\n\r]*'
                                          r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
     add_primary_key = add_primary_key_pattern.match(sql)
     if add_primary_key:
-        return {'alter': add_primary_key.group(1),
-                'add primary key': [{'value': i} for i in add_primary_key.group(2).split(',')]}
+        return {'alter': add_primary_key.group(2),
+                'add primary key': [{'value': i} for i in add_primary_key.group(3).split(',')]}
     drop_primary_key_pattern = re.compile(r'[ \t\n\r]*'
                                           r'[aA][lL][tT][eE][rR][ \t\n\r]*'
                                           r'[tT][aA][bB][lL][eE][ \t\n\r]*'
-                                          r'(\w*)[ \t\n\r]*'
+                                          r'(`|\b)(\w*)\1[ \t\n\r]*'
                                           r'[dD][rR][oO][pP][ \t\n\r]*'
                                           r'[pP][rR][iI][mM][aA][rR][yY][ \t\n\r]*'
                                           r'[kK][eE][yY][ \t\n\r]*;?$')
     drop_primary_key = drop_primary_key_pattern.match(sql)
     if drop_primary_key:
-        return {'alter': drop_primary_key.group(1), 'drop primary key': True}
+        return {'alter': drop_primary_key.group(2), 'drop primary key': True}
     add_foreign_key_pattern = re.compile(r'[ \t\n\r]*'
                                          r'[aA][lL][tT][eE][rR][ \t\n\r]*'
                                          r'[tT][aA][bB][lL][eE][ \t\n\r]*'
-                                         r'(\w*)[ \t\n\r]*'
+                                         r'(`|\b)(\w*)\1[ \t\n\r]*'
                                          r'[aA][dD][dD][ \t\n\r]*'
                                          r'[cC][oO][nN][sS][tT][rR][aA][iI][nN][tT][ \t\n\r]*'
                                          r'(\w*)[ \t\n\r]*'
@@ -127,21 +127,74 @@ def parse_alter_key(sql):
                                          r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
     add_foreign_key = add_foreign_key_pattern.match(sql)
     if add_foreign_key:
-        return {'alter': add_foreign_key.group(1), 'add constraint': add_foreign_key.group(2),
-                'add foreign key': [{'value': i} for i in add_foreign_key.group(3).split(',')],
-                'reference_table': add_foreign_key.group(4),
-                'reference_feature': [{'value': i} for i in add_foreign_key.group(5).split(',')]}
+        return {'alter': add_foreign_key.group(2), 'add constraint': add_foreign_key.group(3),
+                'add foreign key': [{'value': i} for i in add_foreign_key.group(4).split(',')],
+                'reference_table': add_foreign_key.group(5),
+                'reference_feature': [{'value': i} for i in add_foreign_key.group(6).split(',')]}
     drop_foreign_key_pattern = re.compile(r'[ \t\n\r]*'
                                           r'[aA][lL][tT][eE][rR][ \t\n\r]*'
                                           r'[tT][aA][bB][lL][eE][ \t\n\r]*'
-                                          r'(\w*)[ \t\n\r]*'
+                                          r'(`|\b)(\w*)\1[ \t\n\r]*'
                                           r'[dD][rR][oO][pP][ \t\n\r]*'
                                           r'[fF][oO][rR][eE][iI][gG][nN][ \t\n\r]*'
                                           r'[kK][eE][yY][ \t\n\r]*'
                                           r'(\w*)[ \t\n\r]*;?$')
     drop_foreign_key = drop_foreign_key_pattern.match(sql)
     if drop_foreign_key:
-        return {'alter': drop_foreign_key.group(1), 'drop foreign key': drop_foreign_key.group(2)}
+        return {'alter': drop_foreign_key.group(2), 'drop foreign key': drop_foreign_key.group(3)}
+    add_index_pattern = re.compile(r'[ \t\n\r]*'
+                                   r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                   r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                   r'(`|\b)(\w*)\1[ \t\n\r]*'
+                                   r'[aA][dD][dD][ \t\n\r]*'
+                                   r'[iI][nN][dD][eE][xX][ \t\n\r]*'
+                                   r'(\w*)[ \t\n\r]*'
+                                   r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
+    add_index = add_index_pattern.match(sql)
+    if add_index:
+        return {'alter': add_index.group(2),
+                'add index': add_index.group(3),
+                'add index feature': [{'value': i} for i in add_index.group(4).split(',')]}
+
+    add_fulltext_pattern = re.compile(r'[ \t\n\r]*'
+                                      r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                      r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                      r'(`|\b)(\w*)\1[ \t\n\r]*'
+                                      r'[aA][dD][dD][ \t\n\r]*'
+                                      r'[fF][uU][lL][lL][tT][eE][xX][tT][ \t\n\r]*'
+                                      r'(\w*)[ \t\n\r]*'
+                                      r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
+    add_fulltext = add_fulltext_pattern.match(sql)
+    if add_fulltext:
+        return {'alter': add_fulltext.group(2),
+                'add fulltext': add_fulltext.group(3),
+                'add fulltext feature': [{'value': i} for i in add_fulltext.group(4).split(',')]}
+
+    add_unique_pattern = re.compile(r'[ \t\n\r]*'
+                                    r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                    r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                    r'(`|\b)(\w*)\1[ \t\n\r]*'
+                                    r'[aA][dD][dD][ \t\n\r]*'
+                                    r'[uU][nN][iI][qQ][uU][eE][ \t\n\r]*'
+                                    r'(\w*)[ \t\n\r]*'
+                                    r'\([ \t\n\r]*(\w*)[ \t\n\r]*\)[ \t\n\r]*;?$')
+    add_unique = add_unique_pattern.match(sql)
+    if add_unique:
+        return {'alter': add_unique.group(2),
+                'add unique': add_unique.group(3),
+                'add unique feature': [{'value': i} for i in add_unique.group(4).split(',')]}
+
+    drop_index_pattern = re.compile(r'[ \t\n\r]*'
+                                    r'[aA][lL][tT][eE][rR][ \t\n\r]*'
+                                    r'[tT][aA][bB][lL][eE][ \t\n\r]*'
+                                    r'(`|\b)(\w*)\1[ \t\n\r]*'
+                                    r'[dD][rR][oO][pP][ \t\n\r]*'
+                                    r'[iI][nN][dD][eE][xX][ \t\n\r]*'
+                                    r'(\w*)[ \t\n\r]*;?$')
+    drop_index = drop_index_pattern.match(sql)
+    if drop_index:
+        return {'alter': drop_index.group(2), 'drop index': drop_index.group(3)}
+
     return {}
 
 
@@ -158,6 +211,18 @@ def format_alter_key(json):
                f"({','.join([i['value'] for i in json['reference_feature']])});"
     if json.get('drop foreign key'):
         return f"alter table {json['alter']} drop foreign key {json['drop foreign key']};"
+    if json.get('add index'):
+        return f"alter table {json['alter']} " \
+               f"add index {json['add index']}({','.join([i['value'] for i in json['add index feature']])});"
+    if json.get('add unique'):
+        return f"alter table {json['alter']} " \
+               f"add unique {json['add unique']}({','.join([i['value'] for i in json['add unique feature']])});"
+    if json.get('add fulltext'):
+        return f"alter table {json['alter']} " \
+               f"add fulltext {json['add fulltext']}({','.join([i['value'] for i in json['add fulltext feature']])});"
+    if json.get('drop index'):
+        return f"alter table {json['alter']} drop index {json['drop index']};"
+
 
 _ = json.dumps
 

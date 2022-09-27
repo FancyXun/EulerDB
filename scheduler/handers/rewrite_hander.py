@@ -22,7 +22,7 @@ class Rewriter(Clause):
         """
         table = None
         self.origin_query = query
-        if self.encrypted_cols:
+        if self.encrypted_cols is not None:
             return rewrite_table(self.db, self.db_meta, query, self.encrypted_cols)
         alter_key_json = parse_alter_key(query)
         json = parse(query) if not alter_key_json else alter_key_json
@@ -113,3 +113,39 @@ class Rewriter(Clause):
             else:
                 json[key] = func.rewrite(json[key], table, json=source_json)
         return json
+
+
+if __name__ == '__main__':
+    str_db = '127.0.0.1:3306/points'
+    enc_cols = {}
+    sql_list = [
+        # "CREATE TABLE `user_info`  (\
+        #     `id` bigint(11) NOT NULL AUTO_INCREMENT COMMENT '主键',\
+        #     `user_name` varchar(255) "
+        #     # "CHARACTER SET utf8 "
+        #     "COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '姓名',\
+        #     `sex` int(1) NULL DEFAULT NULL COMMENT '性别',\
+        #     `create_date` "
+        #     "timestamp "
+        #     "NULL DEFAULT CURRENT_TIMESTAMP "
+        #     # "ON UPDATE CURRENT_TIMESTAMP(0) "
+        #     "COMMENT '创建日期',\
+        #     PRIMARY KEY (`id`) "
+        #     # "USING BTREE\
+        # ") ENGINE = InnoDB "
+        # "AUTO_INCREMENT = 5 "
+        # # "CHARACTER SET = utf8mb4 "
+        # "COLLATE = utf8mb4_0900_ai_ci "
+        # "COMMENT = '用户信息表' "
+        # # "ROW_FORMAT = Dynamic"
+        # ";",
+        'select * from tt'
+    ]
+    enc_cols = [None]*len(sql_list)
+    enc_cols[0] = []
+    rewriter = Rewriter(str_db, enc_cols)
+    for i in range(len(sql_list)):
+        rewriter = Rewriter(str_db, enc_cols[i])
+        res = rewriter.rewrite_query(sql_list[i])
+        print(res[0])
+
