@@ -306,7 +306,9 @@ if __name__ == "__main__":
     # # test3
     table1 = e2e.create_table(database_info, mysql_cx)
     table2 = e2e.create_table(database_info, mysql_cx)
+
     e2e.insert_sql(database_info, mysql_cx, table1, 100)
+
     e2e.insert_sql(database_info, mysql_cx, table2, 100)
     e2e.test_two_tables(database_info, mysql_cx, table1, table2)
     e2e.drop_table(database_info, mysql_cx, table1)
