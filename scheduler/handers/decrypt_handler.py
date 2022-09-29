@@ -1,3 +1,5 @@
+import datetime
+
 from decimal import Decimal
 from scheduler.crypto import encrypt
 from scheduler.handers.base import Handler
@@ -25,7 +27,11 @@ class DecryptHandler(Handler):
                 if state == "plaintext":
                     if isinstance(col_val, Decimal):
                         col_val = eval(col_val.__str__())
-                    new_row.append(col_val)
+
+                    if isinstance(col_val, datetime.datetime):
+                        new_row.append(col_val.strftime("%Y-%m-%d %H:%M:%S"))
+                    else:
+                        new_row.append(col_val)
                 else:
                     new_row.append(self.__decrypt__(table, col_val, col_name, state))
             self.result.append(tuple(new_row))

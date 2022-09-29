@@ -58,10 +58,7 @@ def req(_db_info, _cx, sql):
 
 
 def generate_face_id(face):
-    b = face.tobytes()
-    # c = np.frombuffer(b, dtype=np.float64)
-    d = base64.b64encode(b).decode("utf-8")
-    return d
+    return base64.b64encode(face.tobytes()).decode("utf-8")
 
 
 def generate_file(num):
@@ -84,11 +81,47 @@ class E2E():
 
     # 'id', 'device_id', 'time'
     @staticmethod
-    def test_create_table(_db_info, _cx, table_name):
+    def test_create_daka_table(_db_info, _cx, table_name):
         sql = 'create table if not exists {}(' \
-              'id varchar(1000), ' \
+              'card_id int, ' \
               'device_id varchar(100), ' \
               'time datetime) '.format(table_name)
+
+        encrypted_columns = {
+        }
+        _db_info['encrypted_columns'] = encrypted_columns
+        print("create table {}".format(table_name))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql)
+        print("finished".format(table_name))
+        print("-" * 100)
+        _db_info.pop('encrypted_columns')
+        return table_name
+
+    @staticmethod
+    def test_create_quanxian_table(_db_info, _cx, table_name):
+        sql = 'create table if not exists {}(' \
+              'card_id int, ' \
+              'device_id varchar(100), ' \
+              'quanxian int) '.format(table_name)
+
+        encrypted_columns = {
+        }
+        _db_info['encrypted_columns'] = encrypted_columns
+        print("create table {}".format(table_name))
+        print("--" + "\n" + "--")
+        req(_db_info, _cx, sql)
+        print("finished".format(table_name))
+        print("-" * 100)
+        _db_info.pop('encrypted_columns')
+        return table_name
+
+    @staticmethod
+    def test_create_id_card_table(_db_info, _cx, table_name):
+        sql = 'create table if not exists {}(' \
+              'id varchar(1000), ' \
+              'card_id int not null auto_increment primary key' \
+              ') '.format(table_name)
 
         encrypted_columns = {
             "id": {
@@ -153,15 +186,33 @@ if __name__ == '__main__':
     database_info = DataBase.get_db_info()
     mysql_cx = DataBase.get_mysql_cu(database_info)
     e2e = E2E()
-    table1 = e2e.test_create_table(database_info, mysql_cx, "shuaka_"+str(1000000))
-    file_name = generate_file(1000000)
-    columns = ['id', 'device_id', 'time']
-    start = time.time()
-    e2e.batch_insert_sql(database_info, mysql_cx, table1, file_name, columns)
-    e2e.batch_insert_mysql(database_info, mysql_cx, table1, file_name, columns)
-    remove_file(file_name)
-    e2e.test_create_table(database_info, mysql_cx, "shuaka_" + str(2000000))
-    e2e.test_create_table(database_info, mysql_cx, "shuaka_" + str(4000000))
-    e2e.test_create_table(database_info, mysql_cx, "shuaka_" + str(8000000))
-    e2e.test_create_table(database_info, mysql_cx, "shuaka_" + str(12000000))
-    e2e.test_create_table(database_info, mysql_cx, "shuaka_" + str(15000000))
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp1")
+    # file_name = generate_file(1000000)
+    # columns = ['id', 'device_id', 'time']
+    # start = time.time()
+    # e2e.batch_insert_sql(database_info, mysql_cx, table1, file_name, columns)
+    # e2e.batch_insert_mysql(database_info, mysql_cx, table1, file_name, columns)
+    # remove_file(file_name)
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp2")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp3")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp4")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp5")
+    # e2e.test_create_quanxian_table(database_info, mysql_cx, "quanxian")
+    # e2e.test_create_id_card_table(database_info, mysql_cx, "id_card_id")
+
+
+
+'''
+sql
+insert into table_aff41894ff1ad23bc2587d5f9eaa9b33 select * from  table_b34acd68a1f4dd6c79a8dc9d8b50f749;
+insert into table_aff41894ff1ad23bc2587d5f9eaa9b33 select * from  table_aff41894ff1ad23bc2587d5f9eaa9b33;
+insert into table_2a4baa9b076ae36d3a288df98f27c47a select * from  table_aff41894ff1ad23bc2587d5f9eaa9b33;
+insert into table_2a4baa9b076ae36d3a288df98f27c47a select * from  table_2a4baa9b076ae36d3a288df98f27c47a;
+insert into table_90131ca79fc2a13ae5e35404268f06a3 select * from  table_2a4baa9b076ae36d3a288df98f27c47a;
+insert into table_90131ca79fc2a13ae5e35404268f06a3 select * from  table_90131ca79fc2a13ae5e35404268f06a3;
+insert into table_f2ab36cadb5cdbb7500b9b3008bef404 select * from  table_90131ca79fc2a13ae5e35404268f06a3;
+insert into table_f2ab36cadb5cdbb7500b9b3008bef404 select * from  table_2a4baa9b076ae36d3a288df98f27c47a;
+insert into table_3100d0ca755182d9e8821233ee59fe3a select * from  table_f2ab36cadb5cdbb7500b9b3008bef404;
+insert into table_3100d0ca755182d9e8821233ee59fe3a select * from  table_2a4baa9b076ae36d3a288df98f27c47a limit 3000000;
+
+'''
