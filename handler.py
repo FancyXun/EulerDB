@@ -401,6 +401,7 @@ class EncryptSqlHandler1(tornado.web.RequestHandler, ABC):
             'db': para['db'],
             'sql': para['sql'],
         }
+
         c_e = ControllerEncryptSql1(kwargs)
         res = c_e.do_convert()
         return res

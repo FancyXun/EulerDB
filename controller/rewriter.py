@@ -69,7 +69,14 @@ class ControllerEncryptSql1(object):
         self.data = data
 
     def do_convert(self):
-        result = execution_context.encrypt_sql1(self.data['db'], self.data['sql'])
+        if self.data['sql'] == "select @@version_comment limit 1":
+            return {'encrypt_sql': 'select @@version_comment limit 1'}
+        try:
+            result = execution_context.encrypt_sql1(self.data['db'], self.data['sql'])
+        except Exception as e:
+            print(e)
+            result = self.data['sql']
+        print(self.data['sql'], result)
         if result:
             return {'encrypt_sql': result}
         else:

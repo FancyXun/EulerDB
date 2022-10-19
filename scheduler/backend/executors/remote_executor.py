@@ -220,7 +220,7 @@ class ConvertExecutor(AbstractQueryExecutor):
 
     @staticmethod
     def dispatch(db, _sql):
-        return Rewriter(db).rewrite_query(_sql)
+        return Rewriter(db).rewrite_query(_sql)[0]
 
 
 if __name__ == '__main__':
