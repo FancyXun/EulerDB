@@ -1,4 +1,5 @@
 from scheduler.backend.executors import RemoteExecutor
+from scheduler.backend.executors import ConvertExecutor
 from scheduler.backend.executors import DecryptQueryExecutor
 from scheduler.compile.parser import Parser
 from scheduler.handers.decrypt_handler import DecryptHandler
@@ -33,6 +34,11 @@ def invoke(query_info, query_sql, encrypted_cols=None, columns_info=False):
 def encrypt_sql(query_info, query_sql):
     executor = RemoteExecutor(query_info)
     return executor.encrypt_sql(query_sql)
+
+
+def encrypt_sql1(db, sql):
+    executor = ConvertExecutor()
+    return executor.dispatch(db, sql)
 
 
 def batch_process(query_info):

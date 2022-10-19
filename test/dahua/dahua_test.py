@@ -57,8 +57,7 @@ def req(_db_info, _cx, sql):
     logger.info("mysql:{}".format(time.time() - start_time))
 
 
-def generate_face_id(face):
-    return base64.b64encode(face.tobytes()).decode("utf-8")
+
 
 
 def generate_file(num):
@@ -83,8 +82,8 @@ class E2E():
     @staticmethod
     def test_create_daka_table(_db_info, _cx, table_name):
         sql = 'create table if not exists {}(' \
-              'card_id int, ' \
-              'device_id varchar(100), ' \
+              'id int, ' \
+              'device_id int, ' \
               'time datetime) '.format(table_name)
 
         encrypted_columns = {
@@ -101,8 +100,8 @@ class E2E():
     @staticmethod
     def test_create_quanxian_table(_db_info, _cx, table_name):
         sql = 'create table if not exists {}(' \
-              'card_id int, ' \
-              'device_id varchar(100), ' \
+              'id int, ' \
+              'device_id int, ' \
               'quanxian int) '.format(table_name)
 
         encrypted_columns = {
@@ -117,17 +116,38 @@ class E2E():
         return table_name
 
     @staticmethod
-    def test_create_id_card_table(_db_info, _cx, table_name):
+    def test_create_user_info_table(_db_info, _cx, table_name):
         sql = 'create table if not exists {}(' \
-              'id varchar(1000), ' \
-              'card_id int not null auto_increment primary key' \
+              'face_id varchar(1000), ' \
+              'name varchar(1000), ' \
+              'addr varchar(1000), ' \
+              'id_number varchar(1000), ' \
+              'phone_number varchar(1000), ' \
+              'age int, ' \
+              'id int not null auto_increment primary key' \
               ') '.format(table_name)
 
         encrypted_columns = {
-            "id": {
+            "name": {
+                "fuzzy": True,
+                "key": "abcdefgpoints"
+            },
+            "addr": {
+                "fuzzy": True,
+                "key": "abcdefgpoints"
+            },
+            "id_number": {
+                "fuzzy": True,
+                "key": "abcdefgpoints"
+            },
+            "phone_number": {
+                "fuzzy": True,
+                "key": "abcdefgpoints"
+            },
+            "age": {
                 "fuzzy": False,
                 "key": "abcdefgpoints"
-            }
+            },
         }
         _db_info['encrypted_columns'] = encrypted_columns
         print("create table {}".format(table_name))
@@ -163,7 +183,9 @@ class E2E():
             data = chunk.values.tolist()
             query = "insert into {} (".format(_table) + ",".join(_columns) + ") values(" \
                     + ",".join(["%s"] * len(_columns)) + ")"
+            print(query)
             for row in data:
+                print(row)
                 cu.execute(query, tuple(row))
             _cx.commit()
         cu.close()
@@ -182,24 +204,100 @@ def req_select(_db_info, _cx, sql):
     return result.json()['result'], mysql_result
 
 
+def gen_daka():
+    import csv
+    import datetime
+
+    file_name = os.path.join(os.getcwd(), "daka.csv")
+    with open(file_name, "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+        for i in range(1000000):
+            line = [i%200000, i%400, str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))]
+            writer.writerow(line)
+    return file_name
+
+
+def gen_user_info():
+    import random
+
+    def generate_face_id(face):
+        return base64.b64encode(face.tobytes()).decode("utf-8")
+
+    _file_name = os.path.join(os.getcwd(), "user_info.csv")
+    a = np.random.random((200000, 64))
+    names = ["张三", "李四", "小明"]
+    addrs = ["杭州市滨江区滨兴路1399号", "上海市浦东新区张江科学城",
+             "上海市浦东新区张江高科技园区碧波路690号", "北京海淀区上地十街10号百度大厦"]
+    id_numbers = "310123198107"
+    phone_number = "1332311"
+    ages = np.random.randint(20, 100, 100)
+    import csv
+    with open(_file_name, "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+        for i in range(200000):
+            line = [generate_face_id(a[i % 200000]), names[i%3]+"_"+str(i), addrs[i%3]+"_"+str(i),
+                    id_numbers+str(random.random()*1000000).split(".")[0],
+                    phone_number + str(random.random()*1000000).split(".")[0],
+                    ages[i % 100]]
+            writer.writerow(line)
+    return _file_name
+
+
+def gen_quanxian():
+    import csv
+    file_name = os.path.join(os.getcwd(), "quanxian.csv")
+    with open(file_name, "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+        for i in range(200000):
+            a = np.random.randint(0, 2, 400)
+            for j in range(400):
+                line = [i, j, a[j]]
+                writer.writerow(line)
+    return file_name
+
+
 if __name__ == '__main__':
     database_info = DataBase.get_db_info()
     mysql_cx = DataBase.get_mysql_cu(database_info)
     e2e = E2E()
-    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp1")
-    # file_name = generate_file(1000000)
-    # columns = ['id', 'device_id', 'time']
-    # start = time.time()
-    # e2e.batch_insert_sql(database_info, mysql_cx, table1, file_name, columns)
-    # e2e.batch_insert_mysql(database_info, mysql_cx, table1, file_name, columns)
-    # remove_file(file_name)
-    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp2")
-    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp3")
-    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp4")
-    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_cp5")
-    # e2e.test_create_quanxian_table(database_info, mysql_cx, "quanxian")
-    # e2e.test_create_id_card_table(database_info, mysql_cx, "id_card_id")
 
+    #插入打卡信息
+    # columns = ['id', 'device_id', 'time']
+    # table = "shuaka_history_1"
+    # file_name =gen_daka()
+    # e2e.test_create_daka_table(database_info, mysql_cx, table)
+    # print("----------插入打卡信息--------")
+    # e2e.batch_insert_sql(database_info, mysql_cx, table, file_name, columns)
+    # e2e.batch_insert_mysql(database_info, mysql_cx, table, file_name, columns)
+    # remove_file(file_name)
+
+    # 插入个人信息
+    # table = "user_info"
+    # columns = ['face_id', 'name', 'addr', 'id_number', 'phone_number', 'age']
+    # file_name = gen_user_info()
+    # e2e.test_create_user_info_table(database_info, mysql_cx, "user_info")
+    # print("----------插入个人信息--------")
+    # e2e.batch_insert_sql(database_info, mysql_cx, table, file_name, columns)
+    # e2e.batch_insert_mysql(database_info, mysql_cx, table, file_name, columns)
+    # remove_file(file_name)
+
+    # 插入权限
+    columns = ['id', 'device_id', 'quanxian']
+    table = "quanxian"
+    file_name = gen_quanxian()
+    e2e.test_create_quanxian_table(database_info, mysql_cx, table)
+    print("----------插入权限--------")
+    # e2e.batch_insert_sql(database_info, mysql_cx, table, file_name, columns)
+    # e2e.batch_insert_mysql(database_info, mysql_cx, table, file_name, columns)
+    # remove_file(file_name)
+
+    # 复制数据
+    print("----------复制数据--------")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_history_2")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_history_3")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_history_4")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_history_5")
+    e2e.test_create_daka_table(database_info, mysql_cx, "shuaka_history_6")
 
 
 '''
