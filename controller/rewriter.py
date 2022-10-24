@@ -74,7 +74,6 @@ class ControllerEncryptSql1(object):
         try:
             result = execution_context.encrypt_sql1(self.data['db'], self.data['sql'])
         except Exception as e:
-            print(e)
             result = self.data['sql']
         print(self.data['sql'], result)
         if result:

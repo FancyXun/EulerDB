@@ -211,7 +211,8 @@ class RemoteExecutor(AbstractQueryExecutor):
 
     @property
     def str_db(self):
-        return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])
+        # return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])
+        return str(self.conn_info['db'])
 
 
 class ConvertExecutor(AbstractQueryExecutor):
