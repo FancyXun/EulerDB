@@ -12,9 +12,10 @@ from tornado.concurrent import run_on_executor
 from concurrent.futures import ThreadPoolExecutor
 import mysql.connector
 
-from controller.rewriter import ControllerDatabase, ControllerRewriter, ControllerEncryptSql, ControllerDatabase_jar
+from controller.rewriter import ControllerDatabase, ControllerRewriter, \
+    ControllerEncryptSql, ControllerDatabase_jar, ControllerEncryptSql1
 
-NUMBER_OF_EXECUTOR = 6
+NUMBER_OF_EXECUTOR = 100
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -360,6 +361,51 @@ class EncryptSqlHandler(tornado.web.RequestHandler, ABC):
             return res
         else:
             return {'encrypt_sql': ''}
+
+    @gen.coroutine
+    def post(self, *args, **kwargs):
+        try:
+            result = yield self._post(*args, **kwargs)
+            self.write(result)
+        except HTTPError as e:
+            self.write(e)
+        except Exception as e:
+            self.write({'error': str(e)})
+            logger.error(e)
+            raise HTTPError(404, "No results")
+
+
+class EncryptSqlHandler1(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+    ENCRYPT_KEY = "1234salt1234salt"
+    ENCRYPT_IV = "5678salt5678salt"
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+
+    @run_on_executor
+    def _post(self, *args, **kwargs):
+        para = json.loads(self.request.body)
+        kwargs = {
+            'db': para['db'],
+            'sql': para['sql'],
+        }
+
+        c_e = ControllerEncryptSql1(kwargs)
+        res = c_e.do_convert()
+        return res
+
 
     @gen.coroutine
     def post(self, *args, **kwargs):

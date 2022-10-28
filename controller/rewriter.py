@@ -63,6 +63,24 @@ class ControllerEncryptSql(object):
             return {'encrypt_sql': ''}
 
 
+class ControllerEncryptSql1(object):
+
+    def __init__(self, data):
+        self.data = data
+
+    def do_convert(self):
+        if self.data['sql'] == "select @@version_comment limit 1":
+            return {'encrypt_sql': 'select @@version_comment limit 1', 'table': ''}
+        try:
+            result = execution_context.encrypt_sql1(self.data['db'], self.data['sql'])
+        except Exception as e:
+            return {'encrypt_sql': self.data['sql'], 'table': ''}
+        if result:
+            return {'encrypt_sql': result[0], 'table': result[1] }
+        else:
+            return {'encrypt_sql': '', 'table': ''}
+
+
 class ControllerRewriter(object):
 
     def __init__(self, data):

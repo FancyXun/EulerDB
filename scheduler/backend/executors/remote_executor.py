@@ -211,7 +211,17 @@ class RemoteExecutor(AbstractQueryExecutor):
 
     @property
     def str_db(self):
-        return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])
+        # return str(self.conn_info['host']) + ":" + str(self.conn_info['port']) + "/" + str(self.conn_info['db'])
+        return str(self.conn_info['db'])
+
+
+class ConvertExecutor(AbstractQueryExecutor):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def dispatch(db, _sql):
+        return Rewriter(db).rewrite_query(_sql)
 
 
 if __name__ == '__main__':
