@@ -6,6 +6,20 @@ python 3.6
 mysql
 ```
 
+## meta 
+```shell script
+create database eulerdb_schema;
+create table p_db_meta (
+    database_name VARCHAR(256),
+    database_type VARCHAR(256),
+    table_name VARCHAR(256) ,
+    table_anonymous VARCHAR(256),
+    col_info VARCHAR(256),
+    key_info VARCHAR(256)
+);
+```
+
+
 ## Install
 
 ### Download repo
