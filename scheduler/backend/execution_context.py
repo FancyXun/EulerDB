@@ -4,6 +4,10 @@ from scheduler.backend.executors import DecryptQueryExecutor
 from scheduler.compile.parser import Parser
 from scheduler.handers.decrypt_handler import DecryptHandler
 
+import time
+
+id_sql_map = {}
+
 
 def invoke(query_info, query_sql, encrypted_cols=None, columns_info=False):
     """
@@ -41,6 +45,18 @@ def encrypt_sql1(db, sql):
     return executor.dispatch(db, sql)
 
 
+def encrypt_sql2(db, sql):
+    executor = ConvertExecutor()
+    enc_query, table = executor.dispatch(db, sql)
+    select_columns = executor.get_select_columns()
+    select_types = executor.get_select_types()
+    db_meta, table = executor.get_db_meta()
+    curr_id = lambda: int(round(time.time() * 1000))
+    curr_id = str(curr_id())
+    id_sql_map[curr_id] = [select_columns, select_types, db_meta, table]
+    return enc_query, table, curr_id
+
+
 def batch_process(query_info):
     executor = RemoteExecutor(query_info)
     executor.batch_insert(query_info['batch_process'])
@@ -48,5 +64,3 @@ def batch_process(query_info):
 
 def rewrite(query, db, encrypted_cols=None):
     return RemoteExecutor(None).dispatch(query, db, encrypted_cols)
-
-

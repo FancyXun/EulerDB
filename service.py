@@ -6,7 +6,7 @@ from tornado.ioloop import IOLoop
 
 
 from handler import PostHandler, RewriteHandler, QueryHandler, QueryComponentHandler, \
-    SchemaHandler, CreateHandler, EncryptSqlHandler, PostHandler_jar, EncryptSqlHandler1
+    SchemaHandler, CreateHandler, EncryptSqlHandler, PostHandler_jar, EncryptSqlHandler1, EncryptSqlHandler2
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -30,6 +30,8 @@ HANDLERS = [
     URLSpec(r'/encrypt_sql', EncryptSqlHandler,
             name=SchemaHandler.__name__),
     URLSpec(r'/encrypt_sql1', EncryptSqlHandler1,
+            name=SchemaHandler.__name__),
+    URLSpec(r'/encrypt_sql2', EncryptSqlHandler2,
             name=SchemaHandler.__name__),
 ]
 

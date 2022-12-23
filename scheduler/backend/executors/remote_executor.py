@@ -217,11 +217,28 @@ class RemoteExecutor(AbstractQueryExecutor):
 
 class ConvertExecutor(AbstractQueryExecutor):
     def __init__(self):
-        pass
+        self.str_db = None
+        self.rewriter = None
+        self.encrypted_cols = None
 
-    @staticmethod
-    def dispatch(db, _sql):
-        return Rewriter(db).rewrite_query(_sql)
+    def dispatch(self, db, _sql):
+        self.rewriter = Rewriter(db)
+        self.str_db = db
+        enc_query, self.table = self._dispatch(_sql)
+        return enc_query, self.table
+
+    def _dispatch(self, query):
+        self.rewriter = Rewriter(self.str_db, self.encrypted_cols)
+        return self.rewriter.rewrite_query(query)
+
+    def get_select_columns(self):
+        return self.rewriter.select.select_columns
+
+    def get_select_types(self):
+        return self.rewriter.select.select_types
+
+    def get_db_meta(self):
+        return Delta().meta[self.str_db], self.table
 
 
 if __name__ == '__main__':
