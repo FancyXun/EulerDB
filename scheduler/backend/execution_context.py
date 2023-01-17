@@ -60,8 +60,7 @@ def encrypt_sql2(db, sql):
 
 def decrypt_data(data, curr_id):
     [select_columns, select_types,  db_meta, table, select_state] = id_sql_map[curr_id]
-    DecryptQueryExecutor(DecryptHandler).decrypt1(data, select_state, [], select_columns, db_meta, table)
-    return None
+    return DecryptQueryExecutor(DecryptHandler).decrypt1(data, select_state, [], select_columns, db_meta, table)
 
 
 def batch_process(query_info):

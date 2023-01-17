@@ -44,6 +44,7 @@ class DecryptHandler(Handler):
             new_row = []
             row1 = row.split(",")
             for col_name, state, col_val in zip(select_columns, select_state, row1):
+                print("密文解密：" + col_val)
                 if state == "plaintext":
                     if isinstance(col_val, Decimal):
                         col_val = eval(col_val.__str__())
@@ -54,8 +55,8 @@ class DecryptHandler(Handler):
                         new_row.append(col_val)
                 else:
                     new_row.append(self.__decrypt__(table, col_val, col_name, state))
-            self.result.append(tuple(new_row))
-        return self.result
+            self.result.append(",".join(new_row))
+        return ";".join(self.result)
 
     def __decrypt__(self, table, col_val, col_name, state):
         if col_val is None:

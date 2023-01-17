@@ -38,7 +38,7 @@ HANDLERS = [
 ]
 
 if __name__ == '__main__':
-    SERVER_PORT = 8888
+    SERVER_PORT = 8889
     app = tornado.web.Application(handlers=HANDLERS, debug=True)
     app.listen(SERVER_PORT)
     logger.info("Clean Panel server started on port {SERVER_PORT}".format(SERVER_PORT=SERVER_PORT))

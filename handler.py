@@ -495,7 +495,6 @@ class DecryptResult(tornado.web.RequestHandler, ABC):
         kwargs = {
             'query_id': para['query_id'],
             'data': para['data'],
-            'sql': para['sql']
         }
 
         c_e = ControllerDecrypt(kwargs)

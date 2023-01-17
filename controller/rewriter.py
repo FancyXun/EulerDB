@@ -110,11 +110,11 @@ class ControllerDecrypt(object):
         try:
             result = execution_context.decrypt_data(self.data['data'], self.data['query_id'])
         except Exception as e:
-            return {'encrypt_sql': self.data['sql'], 'table': ''}
+            return {'result': ''}
         if result:
-            return {'encrypt_sql': result[0], 'table': result[1], 'id': result[2] }
+            return {'result': result}
         else:
-            return {'encrypt_sql': '', 'table': ''}
+            return {'result': ''}
 
 
 class ControllerRewriter(object):

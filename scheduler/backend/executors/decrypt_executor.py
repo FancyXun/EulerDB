@@ -26,5 +26,4 @@ class DecryptQueryExecutor(AbstractQueryExecutor):
         return []
 
     def decrypt1(self, data, select_state, query_info, select_columns, db_meta, table):
-        result = self.handler([]).decrypt1(data, select_columns, db_meta, table, select_state)
-        return result
+        return self.handler([]).decrypt1(data, select_columns, db_meta, table, select_state)
