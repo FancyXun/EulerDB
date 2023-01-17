@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 import mysql.connector
 
 from controller.rewriter import ControllerDatabase, ControllerRewriter, \
-    ControllerEncryptSql, ControllerDatabase_jar, ControllerEncryptSql1, ControllerEncryptSql2
+    ControllerEncryptSql, ControllerDatabase_jar, ControllerEncryptSql1, ControllerEncryptSql2, ControllerDecrypt
 
 NUMBER_OF_EXECUTOR = 100
 
@@ -448,6 +448,57 @@ class EncryptSqlHandler2(tornado.web.RequestHandler, ABC):
         }
 
         c_e = ControllerEncryptSql2(kwargs)
+        res = c_e.do_convert()
+        return res
+
+
+    @gen.coroutine
+    def post(self, *args, **kwargs):
+        try:
+            result = yield self._post(*args, **kwargs)
+            self.write(result)
+        except HTTPError as e:
+            self.write(e)
+        except Exception as e:
+            self.write({'error': str(e)})
+            logger.error(e)
+            raise HTTPError(404, "No results")
+
+
+class DecryptResult(tornado.web.RequestHandler, ABC):
+    executor = ThreadPoolExecutor(NUMBER_OF_EXECUTOR)
+    ENCRYPT_KEY = "1234salt1234salt"
+    ENCRYPT_IV = "5678salt5678salt"
+
+    def set_default_headers(self):
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', '*')
+        self.set_header('Access-Control-Max-Age', 1000)
+        self.set_header('Content-type', 'application/json')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Headers',
+                        'Content-Type, Access-Control-Allow-Origin, '
+                        'Access-Control-Allow-Headers, X-Requested-By, Access-Control-Allow-Methods')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+
+    @run_on_executor
+    def _post(self, *args, **kwargs):
+        """
+        columns:col1,col2,col3,col4, rows:r1c1,r1c2,r1c3,r1c4;r2c1,r2c2,r2c3,r2c4
+
+        """
+        para = json.loads(self.request.body)
+
+        kwargs = {
+            'query_id': para['query_id'],
+            'data': para['data'],
+            'sql': para['sql']
+        }
+
+        c_e = ControllerDecrypt(kwargs)
         res = c_e.do_convert()
         return res
 

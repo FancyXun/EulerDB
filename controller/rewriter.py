@@ -101,6 +101,22 @@ class ControllerEncryptSql2(object):
             return {'encrypt_sql': '', 'table': ''}
 
 
+class ControllerDecrypt(object):
+
+    def __init__(self, data):
+        self.data = data
+
+    def do_convert(self):
+        try:
+            result = execution_context.decrypt_data(self.data['data'], self.data['query_id'])
+        except Exception as e:
+            return {'encrypt_sql': self.data['sql'], 'table': ''}
+        if result:
+            return {'encrypt_sql': result[0], 'table': result[1], 'id': result[2] }
+        else:
+            return {'encrypt_sql': '', 'table': ''}
+
+
 class ControllerRewriter(object):
 
     def __init__(self, data):

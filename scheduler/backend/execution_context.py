@@ -51,10 +51,17 @@ def encrypt_sql2(db, sql):
     select_columns = executor.get_select_columns()
     select_types = executor.get_select_types()
     db_meta, table = executor.get_db_meta()
+    select_state = executor.rewriter.select.select_state
     curr_id = lambda: int(round(time.time() * 1000))
     curr_id = str(curr_id())
-    id_sql_map[curr_id] = [select_columns, select_types, db_meta, table]
+    id_sql_map[curr_id] = [select_columns, select_types, db_meta, table, select_state]
     return enc_query, table, curr_id
+
+
+def decrypt_data(data, curr_id):
+    [select_columns, select_types,  db_meta, table, select_state] = id_sql_map[curr_id]
+    DecryptQueryExecutor(DecryptHandler).decrypt1(data, select_state, [], select_columns, db_meta, table)
+    return None
 
 
 def batch_process(query_info):

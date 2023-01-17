@@ -24,3 +24,7 @@ class DecryptQueryExecutor(AbstractQueryExecutor):
             return result
         logger.info("decrypt:{}".format(time.time() - start_time))
         return []
+
+    def decrypt1(self, data, select_state, query_info, select_columns, db_meta, table):
+        result = self.handler([]).decrypt1(data, select_columns, db_meta, table, select_state)
+        return result
