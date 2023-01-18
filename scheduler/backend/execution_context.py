@@ -59,6 +59,7 @@ def encrypt_sql2(db, sql):
 
 
 def decrypt_data(data, curr_id):
+    # print(f"req map:{id_sql_map}")
     [select_columns, select_types,  db_meta, table, select_state] = id_sql_map[curr_id]
     return DecryptQueryExecutor(DecryptHandler).decrypt1(data, select_state, [], select_columns, db_meta, table)
 

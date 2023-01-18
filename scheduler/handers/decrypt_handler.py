@@ -39,11 +39,13 @@ class DecryptHandler(Handler):
 
     def decrypt1(self, data, select_columns, db_meta, table, select_state):
         self.db_meta = db_meta
-        enc_result = data.split(";")
+
+        enc_result = data.get("rows", [])
+        print(f"enc_data:{enc_result}")
         for row in enc_result:
             new_row = []
-            row1 = row.split(",")
-            for col_name, state, col_val in zip(select_columns, select_state, row1):
+            # row1 = row.split(",")
+            for col_name, state, col_val in zip(select_columns, select_state, row):
                 print("密文解密：" + col_val)
                 if state == "plaintext":
                     if isinstance(col_val, Decimal):
@@ -55,8 +57,9 @@ class DecryptHandler(Handler):
                         new_row.append(col_val)
                 else:
                     new_row.append(self.__decrypt__(table, col_val, col_name, state))
-            self.result.append(",".join(new_row))
-        return ";".join(self.result)
+            self.result.append(new_row)
+        # print(f"decrypted data:{self.result}")
+        return dict(columns=select_columns, rows=self.result)
 
     def __decrypt__(self, table, col_val, col_name, state):
         if col_val is None:
@@ -67,8 +70,8 @@ class DecryptHandler(Handler):
         if isinstance(table, dict):
             # 可能是select 嵌套
             table = get_nest_table(table)
-        key = self.db_meta[table]['columns'][col_name]['key']
-        homo_key = self.db_meta[table]['columns'][col_name].get('homomorphic_key')
+        key = self.db_meta[table]['columns'][col_name]['key']  # AES 密钥
+        homo_key = self.db_meta[table]['columns'][col_name].get('homomorphic_key')  # 同态加密密钥
         decrypter = {"symmetric": encrypt.AESCipher(key),
                      "order-preserving": encrypt.OPECipher(key),
                      "arithmetic": encrypt.HomomorphicCipher(homo_key)}

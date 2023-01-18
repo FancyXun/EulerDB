@@ -491,7 +491,7 @@ class DecryptResult(tornado.web.RequestHandler, ABC):
 
         """
         para = json.loads(self.request.body)
-
+        # print(f"req data:{para}")
         kwargs = {
             'query_id': para['query_id'],
             'data': para['data'],

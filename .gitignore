@@ -13,3 +13,6 @@ data/schema-euler.db
 words.txt
 test.py
 euler_db.log
+venv
+build
+.idea

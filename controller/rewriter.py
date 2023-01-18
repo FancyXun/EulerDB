@@ -112,7 +112,7 @@ class ControllerDecrypt(object):
         except Exception as e:
             return {'result': ''}
         if result:
-            return {'result': result}
+            return {'query_id': self.data['query_id'], 'data': result}
         else:
             return {'result': ''}
 
